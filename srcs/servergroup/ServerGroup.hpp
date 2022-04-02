@@ -7,8 +7,9 @@
 class ServerGroup
 {
 private:
-	std::map<long, Server>	_servers; 	//group of servers configures
+	std::map<long, Server>	_servers; 	//group of servers configured (server fd, server instance)
 	fd_set	_fd_set; 					//fd set for select();
+	long	_max_fd;					//maximum fd to be used by select first param
 
 
 public:

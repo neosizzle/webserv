@@ -26,11 +26,19 @@
 #include <unistd.h>
 #include <fcntl.h>
 
+//containers
+#include <vector>
+#include <map>
+#include <stack>
+
 //input / output
 #include <iostream>
 
 //network
 #include <sys/socket.h> 
 #include <netinet/in.h>
+
+//fd
+#include <sys/select.h>
 
 #endif  //!__WEBSERV__H 

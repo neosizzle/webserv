@@ -6,7 +6,7 @@
  */
 Server::Server()
 {
-	std::cout << BOLDRED << "Server initialize fail, no port and host provided " << RESET << "\n";
+	std::cerr << BOLDRED << "Server initialize fail, no port and host provided " << RESET << "\n";
 	exit(1);
 }
 

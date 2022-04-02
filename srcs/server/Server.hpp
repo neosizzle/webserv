@@ -2,6 +2,7 @@
 #define	__SERVER__H 
 #include "webserv.hpp"
 
+//class for a single server instance
 class Server
 {
 private:

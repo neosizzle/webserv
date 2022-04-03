@@ -20,8 +20,13 @@ public:
 
 	Server	&operator=(const Server &other);
 
+	//getters
 	int						get_server_fd();
 	struct sockaddr_in		get_server_address();
+
+	//operations
+	long					accept(); //accepts connection
+	int						recv(long socket); //reads connection
 };
 
 #endif  //!__SERVER__H 

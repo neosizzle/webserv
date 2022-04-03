@@ -1,4 +1,4 @@
-SRCS = ./srcs/*.cpp ./srcs/server/*.cpp
+SRCS = ./srcs/*.cpp ./srcs/server/*.cpp ./srcs/servergroup/*.cpp
 OBJS = *.o
 INCS = ./srcs/
 INCS_CGI = ./srcs/cgi
@@ -6,6 +6,7 @@ INCS_REQUEST = ./srcs/request
 INCS_RESPONSE = ./srcs/response
 INCS_SERVER = ./srcs/server
 INCS_UTILS = ./srcs/utils
+INCS_SERVERGROUP = ./srcs/servergroup
 NAME = webserv
 # CC = c++ -Wall -Wextra -Werror -std=c++98 -fsanitize=address -g3
 CC = c++ -Wall -Wextra -std=c++98 -fsanitize=address -g3 # for developing
@@ -13,7 +14,7 @@ CC = c++ -Wall -Wextra -std=c++98 -fsanitize=address -g3 # for developing
 all : ${NAME}
 
 ${NAME} : ${SRCS} ${INCS}
-	${CC} -c -I${INCS} -I${INCS_SERVER} ${SRCS}
+	${CC} -c -I${INCS} -I${INCS_SERVER} -I${INCS_SERVERGROUP} ${SRCS}
 	${CC} ${OBJS} -o ${NAME}
 
 clean :

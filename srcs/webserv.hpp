@@ -20,11 +20,16 @@
 #define BOLDCYAN    "\033[1m\033[36m"      /* Bold Cyan */
 #define BOLDWHITE   "\033[1m\033[37m"      /* Bold White */
 
+//constants
+#define BUFF_SIZE 100000
+
 //C imports
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <sys/time.h>
+#include <string.h>
 
 //containers
 #include <vector>

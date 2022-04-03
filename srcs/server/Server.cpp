@@ -49,6 +49,7 @@ Server::Server(unsigned int host, int port)
 		perror("Server initialize fail, listen failed");
 		exit (1);
 	}
+	std::cout << "Server up and listening on port " << port << "\n";
 }
 
 Server::~Server()
@@ -95,4 +96,42 @@ int	Server::get_server_fd()
 struct sockaddr_in Server::get_server_address()
 {
 	return this->_server_address;
+}
+
+/**
+ * @brief calls accept on server fd and returns client fd
+ * 
+ * 1. Calls unix accept and does error checking
+ * 2. Set client fd to non blocking mode
+ * @return long client fd 
+ */
+long	Server::accept()
+{
+	long	client_fd;
+
+	client_fd = ::accept(this->_server_fd, NULL, NULL);
+	if (client_fd == -1)
+	{
+		perror("Server accept failed");
+		exit(1);
+	}
+	fcntl(client_fd, F_SETFL, O_NONBLOCK);
+	return client_fd;
+}
+
+int		Server::recv(long socket)
+{
+	int		res;
+	char	buffer[BUFF_SIZE] = {0};
+
+	res = ::recv(socket, buffer, BUFF_SIZE - 1, 0);
+	if (res == -1 || res == 0)
+	{
+		if (!res)
+			std::cout << BOLDYELLOW << "Client closed connection" << RESET << "\n";
+		if (res == -1)
+			perror("Read operation failed");
+		close(socket);
+	}
+	return res;
 }

@@ -1,4 +1,4 @@
-SRCS = ./srcs/*.cpp ./srcs/server/*.cpp ./srcs/servergroup/*.cpp
+SRCS = ./srcs/*.cpp ./srcs/server/*.cpp ./srcs/servergroup/*.cpp ./srcs/response/*.cpp ./srcs/request/*.cpp
 OBJS = *.o
 INCS = ./srcs/
 INCS_CGI = ./srcs/cgi
@@ -14,7 +14,7 @@ CC = c++ -Wall -Wextra -std=c++98 -fsanitize=address -g3 # for developing
 all : ${NAME}
 
 ${NAME} : ${SRCS} ${INCS}
-	${CC} -c -I${INCS} -I${INCS_SERVER} -I${INCS_SERVERGROUP} ${SRCS}
+	${CC} -c -I${INCS} -I${INCS_SERVER} -I${INCS_SERVERGROUP} -I${INCS_RESPONSE} -I${INCS_REQUEST} ${SRCS}
 	${CC} ${OBJS} -o ${NAME}
 
 clean :

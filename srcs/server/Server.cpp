@@ -108,15 +108,23 @@ struct sockaddr_in Server::get_server_address()
  */
 long	Server::accept()
 {
-	long	client_fd;
+	long				client_fd;
+	struct sockaddr_in	client_addr;
+	int					client_addr_len;
 
-	client_fd = ::accept(this->_server_fd, NULL, NULL);
+	client_addr_len = sizeof(client_addr);
+	client_fd = ::accept(this->_server_fd, (struct sockaddr *)&client_addr, (socklen_t *)&client_addr_len);
 	if (client_fd == -1)
 	{
 		perror("Server accept failed");
 		exit(1);
 	}
 	fcntl(client_fd, F_SETFL, O_NONBLOCK);
+
+	//logging
+	std::cout << BOLDGREEN << "New connection from " << ft_ltip(ntohl(client_addr.sin_addr.s_addr))
+	<< RESET << "\n";
+
 	return client_fd;
 }
 
@@ -140,7 +148,7 @@ int	Server::recv(long socket)
 			std::cout << BOLDYELLOW << "Client closed connection" << RESET << "\n";
 		if (res == -1)
 			perror("Read operation failed");
-		close(socket);
+		this->close(socket);
 	}
 
 	//parsing request details
@@ -166,14 +174,17 @@ int	Server::_parse_request(long socket, std::string buffer)
 	std::vector<std::string>::iterator	subsequent_tokens_iter;
 	std::map<std::string, std::string>	headers;
 
-	first_line_tokens = tokenize(buffer.substr(0, buffer.find('\n')), " ");
+	first_line_tokens = ft_tokenize(buffer.substr(0, buffer.find('\n')), " ");
 	method = first_line_tokens[0];
 	route = first_line_tokens[1];
 	protocol = first_line_tokens[2];
 
+	//logging
+	std::cout << BOLDGREEN << buffer.substr(0, buffer.find('\n')) << RESET << "\n";
+
 	//construct request object
 	buffer = buffer.substr(buffer.find('\n'), buffer.length());
-	subsequent_tokens = tokenize(buffer, "\n");
+	subsequent_tokens = ft_tokenize(buffer, "\n");
 	subsequent_tokens_iter = subsequent_tokens.begin();
 	while (subsequent_tokens_iter != subsequent_tokens.end())
 	{
@@ -190,4 +201,11 @@ int	Server::_parse_request(long socket, std::string buffer)
 	this->_requests.insert(std::make_pair(socket, request));
 
 	return 0;
+}
+
+void	Server::close(long socket)
+{
+	if (socket > 0)
+		::close(socket);
+	this->_requests.erase(socket);
 }

@@ -144,8 +144,10 @@ void	ServerGroup::run()
 					std::cout << "===================SENDING RESPONSE=============\n";
 					//response is getting sent here.... "HTTP/1.1 200 OK\n hello"
 					send(*responses_iter, response , strlen(response) , 0);
-					this->_clients.erase(*responses_iter);
-					this->_clients_write.erase(responses_iter);
+					this->_clients[*responses_iter]->close(*responses_iter);//close socket 
+					this->_clients.erase(*responses_iter);//erase client 
+					this->_clients_write.erase(responses_iter);//erase write set
+					FD_CLR(*responses_iter, &(this->_fd_set));//remove from fd set
 					break;
 				}
 				responses_iter++;
@@ -157,10 +159,8 @@ void	ServerGroup::run()
 			{
 				if (FD_ISSET(clients_iter->first, &(read_fds_copy)))
 				{
-					std::cout << "===================READING CONNECTION MESSAGE=============\n";
 					//request handling goes here.....
 					int	recv_ret = clients_iter->second->recv(clients_iter->first);
-					std::cout << "=============================================================\n";
 					this->_clients_write.push_back(clients_iter->first);
 				}
 				clients_iter++;
@@ -178,7 +178,6 @@ void	ServerGroup::run()
 						this->_clients.insert(std::make_pair(accepted_client_fd, &(servers_iter->second)));
 						if (accepted_client_fd > this->_max_fd)
 							this->_max_fd = accepted_client_fd;
-						std::cout << "===================CONNECTION ACCPETED=============\n";
 					}
 				}
 				servers_iter++;

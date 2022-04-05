@@ -28,8 +28,9 @@ public:
 	struct sockaddr_in		get_server_address();
 
 	//operations
-	long					accept(); //accepts connection
-	int						recv(long socket); //reads connection
+	long					accept(); 			//accepts connection
+	int						recv(long socket); 	//reads connection
+	void					close(long socket);	//closes connection
 };
 
 #endif  //!__SERVER__H 

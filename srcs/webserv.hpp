@@ -38,12 +38,17 @@
 
 //input / output
 #include <iostream>
+#include <sstream>
 
 //network
 #include <sys/socket.h> 
 #include <netinet/in.h>
+#include <arpa/inet.h>
 
 //fd
 #include <sys/select.h>
 
+//func macro
+#define SSTR( x ) static_cast< std::ostringstream & >( \
+        ( std::ostringstream() << std::dec << x ) ).str()
 #endif  //!__WEBSERV__H 

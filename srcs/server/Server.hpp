@@ -1,6 +1,7 @@
 #ifndef	__SERVER__H 
 #define	__SERVER__H 
 #include "webserv.hpp"
+#include "Request.hpp"
 
 //class for a single server instance
 class Server
@@ -10,8 +11,10 @@ private:
 	struct sockaddr_in	_server_address;//server address metadata for bind()
 	int					_port;			//port the server listens on (from config)
 	unsigned int		_host;			//hostname (from config)
+	std::map<long, Request>	_requests; //pending requests to handle (from multiple clients or same clients)
 
-	
+	int					_parse_request(long client_socket, std::string request);//attempts to parse a http request and returns a status
+
 public:
 	Server();
 	Server(unsigned int host, int port);

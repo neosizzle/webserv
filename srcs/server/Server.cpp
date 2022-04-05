@@ -1,4 +1,5 @@
 #include "Server.hpp"
+#include "utils.hpp"
 
 /**
  * @brief This is illegal
@@ -119,12 +120,20 @@ long	Server::accept()
 	return client_fd;
 }
 
-int		Server::recv(long socket)
+/**
+ * @brief Reads an available connection socket and parses it into a request object. The request object is then stored
+ * Inside the map
+ * 
+ * @param socket client socket which is READ READY
+ * @return int staatus of recv
+ */
+int	Server::recv(long socket)
 {
-	int		res;
-	char	buffer[BUFF_SIZE] = {0};
+	int			res;
+	char		buf[BUFF_SIZE] = {0};
+	std::string	buffer;
 
-	res = ::recv(socket, buffer, BUFF_SIZE - 1, 0);
+	res = ::recv(socket, buf, BUFF_SIZE - 1, 0);
 	if (res == -1 || res == 0)
 	{
 		if (!res)
@@ -133,5 +142,52 @@ int		Server::recv(long socket)
 			perror("Read operation failed");
 		close(socket);
 	}
+
+	//parsing request details
+	buffer = buf;
+	this->_parse_request(socket, buffer);
 	return res;
+}
+
+/**
+ * @brief Parses the http request to a Request object and saves it to _request map
+ * 
+ * @param socket 
+ * @param buffer 
+ * @return int status (non zero if error)
+ */
+int	Server::_parse_request(long socket, std::string buffer)
+{
+	std::string							method;
+	std::string							route;
+	std::string							protocol;
+	std::vector<std::string>			first_line_tokens;
+	std::vector<std::string>			subsequent_tokens;
+	std::vector<std::string>::iterator	subsequent_tokens_iter;
+	std::map<std::string, std::string>	headers;
+
+	first_line_tokens = tokenize(buffer.substr(0, buffer.find('\n')), " ");
+	method = first_line_tokens[0];
+	route = first_line_tokens[1];
+	protocol = first_line_tokens[2];
+
+	//construct request object
+	buffer = buffer.substr(buffer.find('\n'), buffer.length());
+	subsequent_tokens = tokenize(buffer, "\n");
+	subsequent_tokens_iter = subsequent_tokens.begin();
+	while (subsequent_tokens_iter != subsequent_tokens.end())
+	{
+		if ((*subsequent_tokens_iter).length() > 1)
+		{
+			headers.insert(std::make_pair(
+				(*subsequent_tokens_iter).substr(0, (*subsequent_tokens_iter).find(':')),
+				(*subsequent_tokens_iter).substr((*subsequent_tokens_iter).find(':') + 1, (*subsequent_tokens_iter).length())
+				));
+		}
+		subsequent_tokens_iter++;
+	}
+	Request	request(method, route, protocol, headers);
+	this->_requests.insert(std::make_pair(socket, request));
+
+	return 0;
 }

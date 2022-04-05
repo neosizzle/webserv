@@ -124,6 +124,7 @@ void	ServerGroup::run()
 		if (avail_fds_found == -1)
 		{
 			std::cerr << BOLDRED << "Select error \n" << RESET;
+			perror("");
 			FD_ZERO(&(this->_fd_set));
 			servers_iter = this->_servers.begin();
 			while (servers_iter != this->_servers.end())
@@ -158,13 +159,7 @@ void	ServerGroup::run()
 				{
 					std::cout << "===================READING CONNECTION MESSAGE=============\n";
 					//request handling goes here.....
-					char buffer[30000] = {0};
-					if (recv( clients_iter->first , buffer, 30000, 0) == -1)
-					{
-						perror("recv failure ");
-						exit(1);
-					}
-					std::cout << buffer << "\n";
+					int	recv_ret = clients_iter->second->recv(clients_iter->first);
 					std::cout << "=============================================================\n";
 					this->_clients_write.push_back(clients_iter->first);
 				}

@@ -11,9 +11,11 @@ private:
 	struct sockaddr_in	_server_address;//server address metadata for bind()
 	int					_port;			//port the server listens on (from config)
 	unsigned int		_host;			//hostname (from config)
-	std::map<long, Request>	_requests; //pending requests to handle (from multiple clients or same clients)
+	std::map<long, std::string>	_requests; //pending requests to handle (from multiple clients or same clients)
+	std::map<long, std::string>	_responses; //pending requests to send(from multiple clients or same clients)
 
-	int					_parse_request(long client_socket, std::string request);//attempts to parse a http request and returns a status
+	// int					_parse_request(long client_socket, std::string request);//attempts to parse a http request and returns a status
+	
 
 public:
 	Server();
@@ -31,6 +33,7 @@ public:
 	long					accept(); 			//accepts connection
 	int						recv(long socket); 	//reads connection
 	void					close(long socket);	//closes connection
+	void					process(long socket);//processes raw request
 };
 
 #endif  //!__SERVER__H 

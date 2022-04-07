@@ -142,70 +142,32 @@ int	Server::recv(long socket)
 	std::string	buffer;
 
 	res = ::recv(socket, buf, BUFF_SIZE - 1, 0);
-	if (res == -1 || res == 0)
+
+	//error checking
+	if (!res)
+		std::cout << BOLDYELLOW << "Client closed connection" << RESET << "\n";
+	if (res < 0)
 	{
-		if (!res)
-			std::cout << BOLDYELLOW << "Client closed connection" << RESET << "\n";
-		if (res == -1)
-			perror("Read operation failed");
+		perror("Recv operation failed");
 		this->close(socket);
 	}
 
-	//parsing request details
+	//record raw buffer as request
 	buffer = buf;
-	this->_parse_request(socket, buffer);
+	this->_requests.insert(std::make_pair(socket, buffer));
+	Request req(buffer);
 	return res;
-}
-
-/**
- * @brief Parses the http request to a Request object and saves it to _request map
- * 
- * @param socket 
- * @param buffer 
- * @return int status (non zero if error)
- */
-int	Server::_parse_request(long socket, std::string buffer)
-{
-	std::string							method;
-	std::string							route;
-	std::string							protocol;
-	std::vector<std::string>			first_line_tokens;
-	std::vector<std::string>			subsequent_tokens;
-	std::vector<std::string>::iterator	subsequent_tokens_iter;
-	std::map<std::string, std::string>	headers;
-
-	first_line_tokens = ft_tokenize(buffer.substr(0, buffer.find('\n')), " ");
-	method = first_line_tokens[0];
-	route = first_line_tokens[1];
-	protocol = first_line_tokens[2];
-
-	//logging
-	std::cout << BOLDGREEN << buffer.substr(0, buffer.find('\n')) << RESET << "\n";
-
-	//construct request object
-	buffer = buffer.substr(buffer.find('\n'), buffer.length());
-	subsequent_tokens = ft_tokenize(buffer, "\n");
-	subsequent_tokens_iter = subsequent_tokens.begin();
-	while (subsequent_tokens_iter != subsequent_tokens.end())
-	{
-		if ((*subsequent_tokens_iter).length() > 1)
-		{
-			headers.insert(std::make_pair(
-				(*subsequent_tokens_iter).substr(0, (*subsequent_tokens_iter).find(':')),
-				(*subsequent_tokens_iter).substr((*subsequent_tokens_iter).find(':') + 1, (*subsequent_tokens_iter).length())
-				));
-		}
-		subsequent_tokens_iter++;
-	}
-	Request	request(method, route, protocol, headers);
-	this->_requests.insert(std::make_pair(socket, request));
-
-	return 0;
 }
 
 void	Server::close(long socket)
 {
+	std::cout << BOLDGREEN << "Closing connection... " << socket << RESET << "\n";
 	if (socket > 0)
 		::close(socket);
 	this->_requests.erase(socket);
+}
+
+void	Server::process(long socket)
+{
+	std::cout << "processing req\n";
 }

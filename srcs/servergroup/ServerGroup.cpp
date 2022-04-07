@@ -17,6 +17,16 @@ ServerGroup::ServerGroup(const ServerGroup &other)
 	*this = other;
 }
 
+ServerGroup &ServerGroup::operator=(const ServerGroup &other)
+{
+	this->_clients = other._clients;
+	this->_clients_write = other._clients_write;
+	this->_fd_set = other._fd_set;
+	this->_max_fd = other._max_fd;
+	this->_servers = other._servers;
+	return *this;
+}
+
 /**
  * @brief Setup all servers for each port in ports parameter
  * 
@@ -90,9 +100,9 @@ void	ServerGroup::run()
 	"Date: Mon, 27 Jul 2009 12:28:53 GMT\n"
 	"Server: Apache/2.2.14 (Win32)\n"
 	"Last-Modified: Wed, 22 Jul 2009 19:15:56 GMT\n"
-	"Content-Length: 88\n"
+	"Content-Length: 20\n"
 	"Content-Type: text/html\n"
-	"\n <h1>it works :o</h1>";
+	"\n<h1>it works :o</h1>";
 
 	std::map<long, Server>::iterator 	servers_iter;
 	std::map<long, Server *>::iterator 	clients_iter;
@@ -109,10 +119,10 @@ void	ServerGroup::run()
 		avail_fds_found = 0;
 		while (!avail_fds_found)
 		{
-			timeout.tv_sec  = 10;
+			timeout.tv_sec  = 5;
 			timeout.tv_usec = 0;
-			memcpy(&read_fds_copy, &this->_fd_set, sizeof(this->_fd_set));
 			FD_ZERO(&write_fds);
+			memcpy(&read_fds_copy, &this->_fd_set, sizeof(this->_fd_set));
 			responses_iter = this->_clients_write.begin();
 			while (responses_iter != this->_clients_write.end())
 			{
@@ -120,11 +130,13 @@ void	ServerGroup::run()
 				responses_iter++;
 			}
 			avail_fds_found = select(this->_max_fd + 1, &read_fds_copy, &write_fds, NULL, &timeout);
+			// std::cout << "avail fd selceted " << avail_fds_found << "\n";
 		}
 		if (avail_fds_found == -1)
 		{
-			std::cerr << BOLDRED << "Select error \n" << RESET;
+			std::cerr << BOLDRED << "Select error " << RESET;
 			perror("");
+			exit(1);//error handling wip
 			FD_ZERO(&(this->_fd_set));
 			servers_iter = this->_servers.begin();
 			while (servers_iter != this->_servers.end())
@@ -132,22 +144,31 @@ void	ServerGroup::run()
 				FD_SET(servers_iter->first, &(this->_fd_set));
 				servers_iter++;
 			}
-			avail_fds_found = 0;
 		}
 		else
 		{
 			responses_iter = this->_clients_write.begin();
-			while (responses_iter != this->_clients_write.end())
+			while (responses_iter != this->_clients_write.end() && avail_fds_found)
 			{
+				int	send_ret;
+
+				// std::cout << "FD_ISSET("<<*responses_iter<<", writefd)" << FD_ISSET(*responses_iter, &(write_fds)) << "\n";
 				if (FD_ISSET(*responses_iter, &(write_fds)))
 				{
 					std::cout << "===================SENDING RESPONSE=============\n";
 					//response is getting sent here.... "HTTP/1.1 200 OK\n hello"
-					send(*responses_iter, response , strlen(response) , 0);
+					send_ret = 	send(*responses_iter, response , strlen(response) , 0);
+					std::cout << "===================SENT RESPONSE=============\n";
+					if (send_ret < 0)
+					{
+						//error handling..
+						std::cout << "send error\n";
+					}
 					this->_clients[*responses_iter]->close(*responses_iter);//close socket 
 					this->_clients.erase(*responses_iter);//erase client 
 					this->_clients_write.erase(responses_iter);//erase write set
 					FD_CLR(*responses_iter, &(this->_fd_set));//remove from fd set
+					avail_fds_found = 0;
 					break;
 				}
 				responses_iter++;
@@ -155,23 +176,40 @@ void	ServerGroup::run()
 			
 
 			clients_iter = this->_clients.begin();
-			while (clients_iter != this->_clients.end())
+			while (clients_iter != this->_clients.end() && avail_fds_found)
 			{
+				int	recv_ret;
+				// std::cout << "FD_ISSET("<<clients_iter->first<<", readfd) : " <<  FD_ISSET(clients_iter->first, &(read_fds_copy)) << "\n";
+
 				if (FD_ISSET(clients_iter->first, &(read_fds_copy)))
 				{
 					//request handling goes here.....
-					int	recv_ret = clients_iter->second->recv(clients_iter->first);
-					this->_clients_write.push_back(clients_iter->first);
+					recv_ret = clients_iter->second->recv(clients_iter->first);
+
+					if (recv_ret < 0)
+					{
+						//error handling...
+						std::cout << "recv error\n";
+					}
+					else
+					{
+						//process rquest...
+						this->_clients[clients_iter->first]->process(clients_iter->first);//close socket 
+						this->_clients_write.push_back(clients_iter->first);
+					}
+					avail_fds_found = 0;
+					break ;
 				}
 				clients_iter++;
 			}
 
 			servers_iter = this->_servers.begin();
-			while (servers_iter != this->_servers.end())
+			while (servers_iter != this->_servers.end() && avail_fds_found)
 			{
 				if (FD_ISSET(servers_iter->first, &(read_fds_copy)))
 				{
 					accepted_client_fd = servers_iter->second.accept();
+					// std::cout << "accepted client " << accepted_client_fd <<"\n";
 					if (accepted_client_fd != -1)
 					{
 						FD_SET(accepted_client_fd, &(this->_fd_set));
@@ -179,6 +217,8 @@ void	ServerGroup::run()
 						if (accepted_client_fd > this->_max_fd)
 							this->_max_fd = accepted_client_fd;
 					}
+					avail_fds_found = 0;
+					break ;
 				}
 				servers_iter++;
 			}

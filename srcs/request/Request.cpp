@@ -1,6 +1,6 @@
 #include "Request.hpp"
 
-Request::Request(std::string method, std::string route, std::string protocol, std::map<std::string, std::string> headers, std::string body) : _method(method), _route(route), _protocol(protocol), _headers(headers), _body(body){}
+Request::Request(){}
 
 Request::Request(std::string raw)
 {

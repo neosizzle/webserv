@@ -19,7 +19,7 @@ private:
 	std::string							_read_value(std::string str); //read http header value
 
 public:
-	Request(std::string method, std::string route, std::string protocol, std::map<std::string, std::string> headers, std::string body);
+	Request();
 	Request(std::string raw);
 	~Request();
 	Request(const Request &other);

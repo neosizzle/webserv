@@ -2,6 +2,7 @@
 #define	__SERVER__H 
 #include "webserv.hpp"
 #include "Request.hpp"
+#include "Response.hpp"
 
 //class for a single server instance
 class Server
@@ -26,14 +27,19 @@ public:
 	Server	&operator=(const Server &other);
 
 	//getters
-	int						get_server_fd();
-	struct sockaddr_in		get_server_address();
+	int								get_server_fd();
+	struct sockaddr_in				get_server_address();
+	std::map <long, std::string>	get_responses();
+
+	//configure
+	int						configure();
 
 	//operations
-	long					accept(); 			//accepts connection
-	int						recv(long socket); 	//reads connection
-	void					close(long socket);	//closes connection
-	void					process(long socket);//processes raw request
+	long					accept(); 				//accepts connection
+	int						recv(long socket); 		//reads connection
+	void					close(long socket);		//closes connection
+	void					process(long socket);	//processes raw request
+	int						send(long socket);		//sends response to socket
 };
 
 #endif  //!__SERVER__H 

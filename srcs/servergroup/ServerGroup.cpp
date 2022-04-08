@@ -155,10 +155,9 @@ void	ServerGroup::run()
 				// std::cout << "FD_ISSET("<<*responses_iter<<", writefd)" << FD_ISSET(*responses_iter, &(write_fds)) << "\n";
 				if (FD_ISSET(*responses_iter, &(write_fds)))
 				{
-					std::cout << "===================SENDING RESPONSE=============\n";
 					//response is getting sent here.... "HTTP/1.1 200 OK\n hello"
-					send_ret = 	send(*responses_iter, response , strlen(response) , 0);
-					std::cout << "===================SENT RESPONSE=============\n";
+					// send_ret = 	send(*responses_iter, response , strlen(response) , 0);
+					send_ret = this->_clients[*responses_iter]->send(*responses_iter);
 					if (send_ret < 0)
 					{
 						//error handling..
@@ -194,7 +193,8 @@ void	ServerGroup::run()
 					else
 					{
 						//process rquest...
-						this->_clients[clients_iter->first]->process(clients_iter->first);//close socket 
+						this->_clients[clients_iter->first]->process(clients_iter->first);
+						// std::cout << "map len after process = " << this->_clients[clients_iter->first]->get_responses().size() << "\n";
 						this->_clients_write.push_back(clients_iter->first);
 					}
 					avail_fds_found = 0;

@@ -1,5 +1,10 @@
 #include "Request.hpp"
 
+/**
+ * @brief Reads the first line (Request line of a raw http request)
+ * 
+ * @param raw Raw http request
+ */
 void	Request::_read_req_line(std::string raw)
 {
 	std::vector<std::string>			first_line_tokens;
@@ -10,6 +15,12 @@ void	Request::_read_req_line(std::string raw)
 	this->_protocol = first_line_tokens[2];
 }
 
+/**
+ * @brief returns the key of a key:value pair
+ * 
+ * @param str 
+ * @return std::string 
+ */
 std::string	Request::_read_key(std::string str)
 {
 	size_t	pos;
@@ -20,6 +31,12 @@ std::string	Request::_read_key(std::string str)
 	return str.substr(0, pos);
 }
 
+/**
+ * @brief returns the value of a key:value pair
+ * 
+ * @param str 
+ * @return std::string 
+ */
 std::string	Request::_read_value(std::string str)
 {
 	size_t	pos;
@@ -30,7 +47,15 @@ std::string	Request::_read_value(std::string str)
 	return str.substr(pos + 1, str.length());
 }
 
-//parse raw buffer into server member classes
+/**
+ * @brief Parses a raw http request and extract values as member variables
+ * 
+ * 1. Extract request line
+ * 2. Extract headers
+ * 3. Extract Body
+ * 
+ * @param raw Raw http request
+ */
 void Request::_parse_raw(std::string raw)
 {
 	std::string							curr_line;
@@ -44,7 +69,7 @@ void Request::_parse_raw(std::string raw)
 	this->_read_req_line(raw);
 
 	//logging
-	std::cout << BOLDGREEN << raw.substr(0, raw.find('\n')) << RESET << "\n";
+	std::cout << BOLDGREEN << "Request : " << raw.substr(0, raw.find('\n')) << RESET << "\n";
 
 	//extract headers
 	start_idx = 0;
@@ -60,7 +85,7 @@ void Request::_parse_raw(std::string raw)
 	//extract body
 	if (start_idx != std::string::npos)
 		this->_body = raw.substr(start_idx, std::string::npos);
-	this->print_headers();
-	this->print_body();
+	// this->print_headers();
+	// this->print_body();
 	return ;
 }

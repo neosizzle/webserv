@@ -1,5 +1,12 @@
 #include "utils.hpp"
 
+/**
+ * @brief ft_split
+ * 
+ * @param s 
+ * @param del 
+ * @return std::vector<std::string> 
+ */
 std::vector<std::string> ft_split(std::string s, std::string del = " ")
 {
     int 						start;
@@ -15,15 +22,6 @@ std::vector<std::string> ft_split(std::string s, std::string del = " ")
     }
 	res.push_back(s.substr(start, end - start));
 	return res;
-}
-
-template <typename T>
-std::string	ft_to_str(T data)
-{
-	std::ostringstream	ss;
-
-	ss << data;
-	return ss.str();
 }
 
 /**

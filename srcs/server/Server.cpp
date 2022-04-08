@@ -7,8 +7,8 @@
  */
 Server::Server()
 {
-	std::cerr << BOLDRED << "Server initialize fail, no port and host provided " << RESET << "\n";
-	exit(1);
+	// std::cerr << BOLDRED << "Server initialize fail, no port and host provided " << RESET << "\n";
+	// exit(1);
 }
 
 /**
@@ -55,7 +55,6 @@ Server::Server(unsigned int host, int port)
 
 Server::~Server()
 {
-
 }
 
 Server::Server(const Server &other)
@@ -75,7 +74,8 @@ Server &Server::operator=(const Server &other)
 	this->_server_address = other._server_address;
 	this->_host = other._host;
 	this->_port = other._port;
-
+	this->_requests = other._requests;
+	this->_responses = other._responses;
 	return *this;
 }
 
@@ -98,6 +98,8 @@ struct sockaddr_in Server::get_server_address()
 {
 	return this->_server_address;
 }
+
+std::map<long ,std::string> Server::get_responses(){return this->_responses;}
 
 /**
  * @brief calls accept on server fd and returns client fd
@@ -155,7 +157,6 @@ int	Server::recv(long socket)
 	//record raw buffer as request
 	buffer = buf;
 	this->_requests.insert(std::make_pair(socket, buffer));
-	Request req(buffer);
 	return res;
 }
 
@@ -167,7 +168,43 @@ void	Server::close(long socket)
 	this->_requests.erase(socket);
 }
 
+//process rquest and generate response
 void	Server::process(long socket)
 {
-	std::cout << "processing req\n";
+	std::string	raw_req;
+	Response	response;
+
+	raw_req = this->_requests[socket];
+	//check for chunked encoding
+	if (raw_req.find("Transfer-Encoding: chunked") != std::string::npos)
+	{
+		std::cout << "chunked encoding found \n";
+		return ;
+	}
+
+	//no chunk, proceeed as normal
+	Request request(raw_req);
+	
+	//generate response
+	response.generate_response(request);
+
+	//remove prev response if any and add response to map
+	this->_responses.erase(socket);
+	this->_responses.insert(std::make_pair(socket, response.get_response()));
+	// std::cout << "respose generated  for socket " << socket <<  this->_responses[socket];
+
+	//remove request
+	this->_requests.erase(socket);
+}
+
+int	Server::send(long socket)
+{
+	std::string	response_raw;
+	int			res;
+
+	// std::cout << "===================SENDING RESPONSE=============\n";
+	response_raw = this->_responses[socket];
+	res = ::send(socket, response_raw.c_str(), response_raw.size(), 0);
+	// std::cout << "===================SENT RESPONSE============= ret :" << res << "\n";
+	return res;
 }

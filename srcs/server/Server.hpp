@@ -8,15 +8,14 @@
 class Server
 {
 private:
-	int					_server_fd;		//file descripter for server listening socket
-	struct sockaddr_in	_server_address;//server address metadata for bind()
-	int					_port;			//port the server listens on (from config)
-	unsigned int		_host;			//hostname (from config)
+	int							_server_fd;		//file descripter for server listening socket
+	struct sockaddr_in			_server_address;//server address metadata for bind()
+	int							_port;			//port the server listens on (from config)
+	unsigned int				_host;			//hostname (from config)
 	std::map<long, std::string>	_requests; //pending requests to handle (from multiple clients or same clients)
 	std::map<long, std::string>	_responses; //pending requests to send(from multiple clients or same clients)
 
-	// int					_parse_request(long client_socket, std::string request);//attempts to parse a http request and returns a status
-	
+	// void						_process_chunked(long socket); //merging chunked requests before processing them as 1 request	
 
 public:
 	Server();

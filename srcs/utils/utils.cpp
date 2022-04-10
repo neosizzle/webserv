@@ -78,3 +78,27 @@ std::string	ft_gnl(std::string &str, size_t &start)
 	start = (j == std::string::npos ? j : j + 1);
 	return ret;
 }
+
+/**
+ * @brief Determines if string str ends with string needle
+ * 
+ * @param str 
+ * @param needle 
+ * @return int 0 if false and 1 is true
+ */
+int	ft_endswith(std::string str, std::string needle)
+{
+	int	i;
+	int	j;
+
+	i = str.size();
+	j = needle.size();
+	while (j > 0)
+	{
+		i--;
+		j--;
+		if (i < 0 || str[i] != needle[j])
+			return 0;
+	}
+	return 1;
+}

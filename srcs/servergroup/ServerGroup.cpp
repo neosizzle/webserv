@@ -162,7 +162,15 @@ void	ServerGroup::run()
 					{
 						//error handling..
 						std::cout << "send error\n";
+						FD_CLR(*responses_iter, &(this->_fd_set));
+						FD_CLR(*responses_iter, &(read_fds_copy));
+						this->_clients.erase(*responses_iter);
+						this->_clients_write.erase(responses_iter);
 					}
+					// if (send_ret == 0)
+					// {
+					// 	this->_clients_write.erase(responses_iter);
+					// }
 					this->_clients[*responses_iter]->close(*responses_iter);//close socket 
 					this->_clients.erase(*responses_iter);//erase client 
 					this->_clients_write.erase(responses_iter);//erase write set
@@ -185,18 +193,20 @@ void	ServerGroup::run()
 					//request handling goes here.....
 					recv_ret = clients_iter->second->recv(clients_iter->first);
 
+					//revc error
 					if (recv_ret < 0)
 					{
 						//error handling...
 						std::cout << "recv error\n";
 					}
-					else
+
+					//request is completed
+					if (recv_ret == 0)
 					{
-						//process rquest...
 						this->_clients[clients_iter->first]->process(clients_iter->first);
-						// std::cout << "map len after process = " << this->_clients[clients_iter->first]->get_responses().size() << "\n";
 						this->_clients_write.push_back(clients_iter->first);
 					}
+		
 					avail_fds_found = 0;
 					break ;
 				}

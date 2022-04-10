@@ -134,14 +134,24 @@ long	Server::accept()
  * @brief Reads an available connection socket and parses it into a request object. The request object is then stored
  * Inside the map
  * 
+ * 1. Call recv to receive http request and write to buf
+ * 2. Do some error checking, close socket if recv fails
+ * 3. convert recv buffer to std::string and append buffer to reuest[socket] map idx
+ * 4. validate that the the current request (_requests[socket]) is complete. (CRLF can be found)
+ * 		- Valdiate that content length matches the length of request stored in map
+ * 		- If there is no content-length header, we are dealing with chunked requests
+ * 		- In the case of a chunked request existing, we want to return 1 (request not complete) or 0 is request is complete
+ * 		- If there is no chunked request, validate request length match Content-Length header and 
+ * 		  the request should be complete (return 0)
  * @param socket client socket which is READ READY
- * @return int staatus of recv
+ * @return int status . 0 if request is complete, 1 if request is still not complete
  */
 int	Server::recv(long socket)
 {
 	int			res;
 	char		buf[BUFF_SIZE] = {0};
 	std::string	buffer;
+	int			content_len;
 
 	res = ::recv(socket, buf, BUFF_SIZE - 1, 0);
 
@@ -152,14 +162,49 @@ int	Server::recv(long socket)
 	{
 		perror("Recv operation failed");
 		this->close(socket);
+		return res;
 	}
 
 	//record raw buffer as request
 	buffer = buf;
-	this->_requests.insert(std::make_pair(socket, buffer));
-	return res;
+	std::cout << "Buffer " << buf << "\n";
+	this->_requests[socket] += buffer;
+
+	//can find crlf in request (request complete)
+	if (this->_requests[socket].find("\r\n\r\n") != std::string::npos)
+	{
+		//if there is no content length
+		if (this->_requests[socket].find("Content-Length") == std::string::npos)
+		{
+			//if there is chunked
+			if (this->_requests[socket].find("Transfer-Encoding: chunked") != std::string::npos)
+			{
+				//if chunked requests ends wuth crlf (end of request)
+				if (ft_endswith(this->_requests[socket], "\r\n\r\n"))
+					return 0;
+				return 1;	
+			}
+			return 0;
+		}
+		
+		//check if saved request size is i + 4 (crlf) + content length
+		content_len = std::atoi(this->_requests[socket]
+					.substr(this->_requests[socket]
+					.find("Content-Length: ") + 16, 10)
+					.c_str());
+		if (this->_requests[socket].size() >= content_len + this->_requests[socket].find("\r\n\r\n") + 4)
+			return 0;
+		return 1;
+	}
+
+	return 1;
 }
 
+/**
+ * @brief Closes the socket provided (send EOF)
+ * 
+ * @param socket 
+ */
 void	Server::close(long socket)
 {
 	std::cout << BOLDGREEN << "Closing connection... " << socket << RESET << "\n";
@@ -168,18 +213,32 @@ void	Server::close(long socket)
 	this->_requests.erase(socket);
 }
 
-//process rquest and generate response
+/**
+ * @brief After reading the request and storing it in the class
+ * 		  This function will be called to generate the response
+ * @attention Do we need to handle transfer encoding chunked seperately?
+ * 
+ * 1. Create request object out of raw req string stored when calling recv().
+ * 2. generate response object
+ * 3. save response object in map to be called by send() in the future
+ * 4. remove request after processing
+ * @param socket 
+ */
 void	Server::process(long socket)
 {
 	std::string	raw_req;
 	Response	response;
 
 	raw_req = this->_requests[socket];
-	//check for chunked encoding
-	if (raw_req.find("Transfer-Encoding: chunked") != std::string::npos)
+
+	//check for chunked encoding and handle that seperately (?)
+	if (raw_req.find("Transfer-Encoding: chunked") != std::string::npos ||
+		raw_req.find("Transfer-Encoding: chunked") < raw_req.find("\r\n\r\n")
+	)
 	{
-		std::cout << "chunked encoding found \n";
-		return ;
+		// std::cout << "chunked encoding found \n;
+		// return ;
+		// this->_process_chunked(socket);
 	}
 
 	//no chunk, proceeed as normal
@@ -197,14 +256,20 @@ void	Server::process(long socket)
 	this->_requests.erase(socket);
 }
 
+/**
+ * @brief Send response to a specified socket
+ * @attention Optimization can be made using a map to keep track 
+ * 				Wether or not the send length is completed and return custom status codes
+ * 
+ * @param socket 
+ * @return int 
+ */
 int	Server::send(long socket)
 {
 	std::string	response_raw;
 	int			res;
 
-	// std::cout << "===================SENDING RESPONSE=============\n";
 	response_raw = this->_responses[socket];
 	res = ::send(socket, response_raw.c_str(), response_raw.size(), 0);
-	// std::cout << "===================SENT RESPONSE============= ret :" << res << "\n";
 	return res;
 }

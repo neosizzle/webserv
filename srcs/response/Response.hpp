@@ -14,6 +14,13 @@ private:
 	//Config							_config	;	//config for processing request and generating response 
 	//config variables go here.....
 
+	void								_process_get(Request request); //config as param
+	void								_process_post(Request request); //config as param
+	void								_process_put(Request request); //config as param
+	void								_process_delete(Request request); //config as param
+
+	void								_generate_response(int code, std::string body);//generates respons str
+
 public:
 	Response();
 	~Response();
@@ -27,7 +34,7 @@ public:
 	std::string							get_body();
 	std::map<std::string, std::string>	get_headers();
 
-	void								generate_response(Request request); //config as param
+	void								call(Request request); //config as param
 
 };
 #endif  //!__REPONSE__H__

@@ -102,3 +102,29 @@ int	ft_endswith(std::string str, std::string needle)
 	}
 	return 1;
 }
+
+/**
+ * @brief Reads a file given the path and writes the contents to res
+ * 
+ * @param path file path to be read from
+ * @param res string that you want to store the contents in
+ * @return int non zero if file is unable to open
+ */
+int	ft_readfile(std::string path, std::string &res)
+{
+	std::string	line;
+
+	std::ifstream infile (path.c_str());
+	if (infile.is_open())
+	{
+		while (std::getline(infile, line))
+		{
+			res += line;
+			res += "\n";
+		}
+	}
+	else
+		return 1;
+	infile.close();
+	return 0;
+}

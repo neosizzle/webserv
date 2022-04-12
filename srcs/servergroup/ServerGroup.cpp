@@ -197,11 +197,14 @@ void	ServerGroup::run()
 					if (recv_ret < 0)
 					{
 						//error handling...
-						std::cout << "recv error\n";
+						FD_CLR(clients_iter->first, &(this->_fd_set));
+						FD_CLR(clients_iter->first, &(read_fds_copy));
+						this->_clients.erase(clients_iter->first);
+						//clients_iter = this->_clients.begin(); //do i need to reset the iter?
 					}
 
 					//request is completed
-					if (recv_ret == 0)
+					else if (recv_ret == 0)
 					{
 						this->_clients[clients_iter->first]->process(clients_iter->first);
 						this->_clients_write.push_back(clients_iter->first);

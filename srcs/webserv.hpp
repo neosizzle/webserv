@@ -22,6 +22,7 @@
 
 //constants
 #define BUFF_SIZE 100000
+#define CRLF "\r\n\r\n"
 
 //C imports
 #include <stdio.h>
@@ -39,6 +40,7 @@
 //input / output
 #include <iostream>
 #include <sstream>
+#include <fstream>
 
 //network
 #include <sys/socket.h> 

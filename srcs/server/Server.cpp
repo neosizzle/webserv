@@ -156,22 +156,22 @@ int	Server::recv(long socket)
 	res = ::recv(socket, buf, BUFF_SIZE - 1, 0);
 
 	//error checking
-	if (!res)
-		std::cout << BOLDYELLOW << "Client closed connection" << RESET << "\n";
-	if (res < 0)
+	if (res <= 0)
 	{
-		perror("Recv operation failed");
 		this->close(socket);
-		return res;
+		if (!res)
+			std::cout << BOLDYELLOW << "Client closed connection" << RESET << "\n";
+		else
+			perror("Recv operation failed");
+		return -1;
 	}
 
 	//record raw buffer as request
 	buffer = buf;
-	std::cout << "Buffer " << buf << "\n";
 	this->_requests[socket] += buffer;
 
 	//can find crlf in request (request complete)
-	if (this->_requests[socket].find("\r\n\r\n") != std::string::npos)
+	if (this->_requests[socket].find(CRLF) != std::string::npos)
 	{
 		//if there is no content length
 		if (this->_requests[socket].find("Content-Length") == std::string::npos)
@@ -180,7 +180,7 @@ int	Server::recv(long socket)
 			if (this->_requests[socket].find("Transfer-Encoding: chunked") != std::string::npos)
 			{
 				//if chunked requests ends wuth crlf (end of request)
-				if (ft_endswith(this->_requests[socket], "\r\n\r\n"))
+				if (ft_endswith(this->_requests[socket], CRLF))
 					return 0;
 				return 1;	
 			}
@@ -192,7 +192,7 @@ int	Server::recv(long socket)
 					.substr(this->_requests[socket]
 					.find("Content-Length: ") + 16, 10)
 					.c_str());
-		if (this->_requests[socket].size() >= content_len + this->_requests[socket].find("\r\n\r\n") + 4)
+		if (this->_requests[socket].size() >= content_len + this->_requests[socket].find(CRLF) + 4)
 			return 0;
 		return 1;
 	}
@@ -233,7 +233,7 @@ void	Server::process(long socket)
 
 	//check for chunked encoding and handle that seperately (?)
 	if (raw_req.find("Transfer-Encoding: chunked") != std::string::npos ||
-		raw_req.find("Transfer-Encoding: chunked") < raw_req.find("\r\n\r\n")
+		raw_req.find("Transfer-Encoding: chunked") < raw_req.find(CRLF)
 	)
 	{
 		// std::cout << "chunked encoding found \n;
@@ -245,7 +245,7 @@ void	Server::process(long socket)
 	Request request(raw_req);
 	
 	//generate response
-	response.generate_response(request);
+	response.call(request);
 
 	//remove prev response if any and add response to map
 	this->_responses.erase(socket);

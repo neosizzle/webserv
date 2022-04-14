@@ -31,6 +31,8 @@
 #include <fcntl.h>
 #include <sys/time.h>
 #include <string.h>
+#include <sys/types.h>
+#include <dirent.h>
 
 //containers
 #include <vector>
@@ -51,6 +53,6 @@
 #include <sys/select.h>
 
 //func macro
-#define SSTR( x ) static_cast< std::ostringstream & >( \
+#define ITOA( x ) static_cast< std::ostringstream & >( \
         ( std::ostringstream() << std::dec << x ) ).str()
 #endif  //!__WEBSERV__H 

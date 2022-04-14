@@ -20,6 +20,9 @@ private:
 	void								_process_delete(Request request); //config as param
 
 	void								_generate_response(int code, std::string body);//generates respons str
+	std::string							_resolve_status(int code);//resolves status text given the status code
+	std::string							_resolve_filepath(std::string route, std::string root);//generates a file path to read from using request data
+	void								_generate_autoidx(std::string path, std::string root);//generate autoindex
 
 public:
 	Response();

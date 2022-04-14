@@ -40,13 +40,13 @@ std::string	ft_ltip(long ip)
 	bytes[2] = ip >> 16 & 0xFF;
 	bytes[3] = ip >> 24 & 0xFF;
 
-	res.append(SSTR(int(bytes[3])));
+	res.append(ITOA(int(bytes[3])));
 	res.append(".");
-	res.append(SSTR(int(bytes[2])));
+	res.append(ITOA(int(bytes[2])));
 	res.append(".");
-	res.append(SSTR(int(bytes[1])));
+	res.append(ITOA(int(bytes[1])));
 	res.append(".");
-	res.append(SSTR(int(bytes[0])));
+	res.append(ITOA(int(bytes[0])));
 	return res;
 }
 

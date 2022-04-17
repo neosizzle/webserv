@@ -16,6 +16,7 @@ Request & Request::operator=(const Request &other)
 	this->_route = other._route;
 	this->_headers = other._headers;
 	this->_body = other._body;
+	this->_raw = other._raw;
 	return *this;
 }
 
@@ -42,6 +43,21 @@ std::string	Request::get_route()
 std::string	Request::get_protocol()
 {
 	return this->_protocol;
+}
+
+std::string	Request::get_body()
+{
+	return this->_body;
+}
+
+std::map<std::string, std::string>	Request::get_headers()
+{
+	return this->_headers;
+}
+
+std::string	Request::get_raw()
+{
+	return this->_raw;
 }
 
 void	Request::print_headers()

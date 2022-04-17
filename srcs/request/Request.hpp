@@ -29,9 +29,12 @@ public:
 	 * @brief Getters
 	 * 
 	 */
-	std::string	get_method();
-	std::string get_route();
-	std::string	get_protocol();
+	std::string							get_method();
+	std::string 						get_route();
+	std::string							get_protocol();
+	std::string							get_body();
+	std::map<std::string, std::string>	get_headers();
+	std::string							get_raw();
 
 	void		print_headers();
 	void		print_body();

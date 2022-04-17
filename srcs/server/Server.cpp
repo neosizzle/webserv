@@ -149,11 +149,14 @@ long	Server::accept()
 int	Server::recv(long socket)
 {
 	int			res;
+	int			bytes_read;
 	char		buf[BUFF_SIZE] = {0};
 	std::string	buffer;
 	int			content_len;
 
+	std::cout << "calling recv\n";
 	res = ::recv(socket, buf, BUFF_SIZE - 1, 0);
+	std::cout << "recv res " << res << "\n";
 
 	//error checking
 	if (res <= 0)
@@ -167,12 +170,17 @@ int	Server::recv(long socket)
 	}
 
 	//record raw buffer as request
-	buffer = buf;
+
+	//add all of buf read into buffer string
+	for (int i = 0; i < res; ++i)
+		buffer += buf[i];
+
 	this->_requests[socket] += buffer;
 
 	//can find crlf in request (request complete)
 	if (this->_requests[socket].find(CRLF) != std::string::npos)
 	{
+		// std::cout << "crlf found!\n";
 		//if there is no content length
 		if (this->_requests[socket].find("Content-Length") == std::string::npos)
 		{
@@ -192,11 +200,16 @@ int	Server::recv(long socket)
 					.substr(this->_requests[socket]
 					.find("Content-Length: ") + 16, 10)
 					.c_str());
+		std::cout << "content length " << content_len + this->_requests[socket].find(CRLF) + 4 << " , request saved size " << this->_requests[socket].size() << "\n";
 		if (this->_requests[socket].size() >= content_len + this->_requests[socket].find(CRLF) + 4)
+		{
+			// std::cout << "returning zero, req complete\n";
 			return 0;
+		}
+		// std::cout << "crlf found but req not complete\n";
 		return 1;
 	}
-
+	// std::cout << "crlf not found\n";
 	return 1;
 }
 

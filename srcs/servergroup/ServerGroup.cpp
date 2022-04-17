@@ -209,7 +209,6 @@ void	ServerGroup::run()
 						this->_clients[clients_iter->first]->process(clients_iter->first);
 						this->_clients_write.push_back(clients_iter->first);
 					}
-		
 					avail_fds_found = 0;
 					break ;
 				}

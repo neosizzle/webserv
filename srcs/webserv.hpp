@@ -21,7 +21,7 @@
 #define BOLDWHITE   "\033[1m\033[37m"      /* Bold White */
 
 //constants
-#define BUFF_SIZE 100000
+#define BUFF_SIZE 1000000
 #define CRLF "\r\n\r\n"
 
 //C imports

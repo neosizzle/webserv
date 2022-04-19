@@ -15,7 +15,7 @@ private:
 	std::map<long, std::string>	_requests; //pending requests to handle (from multiple clients or same clients) (client fd, raw request)
 	std::map<long, std::string>	_responses; //pending requests to send(from multiple clients or same clients) (client fd, raw response)
 
-	// void						_process_chunked(long socket); //merging chunked requests before processing them as 1 request	
+	void						_unchunk_chunks(long socket); //merging chunked requests before processing them as 1 request	
 
 public:
 	Server();

@@ -119,6 +119,7 @@ void	Response::_process_post(Request request)
 		this->_generate_response(400, err_msg);
 		return ;
 	}
+	
 	//check for upload path
 
 	//valdiate uplaod path is a directory
@@ -153,7 +154,6 @@ void	Response::_process_post(Request request)
 			this->_generate_response(500, "Internal Server Error");
 		return ;
 	}
-	// std::cout << "raw req from response " << request.get_raw() << "\n";
 	this->_generate_response(200, "");
 }
 

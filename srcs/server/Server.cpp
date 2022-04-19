@@ -229,9 +229,10 @@ void	Server::close(long socket)
  * @attention Do we need to handle transfer encoding chunked seperately?
  * 
  * 1. Create request object out of raw req string stored when calling recv().
- * 2. generate response object
- * 3. save response object in map to be called by send() in the future
- * 4. remove request after processing
+ * 2. If there is any chunked request, unchunk them first
+ * 3. generate response object
+ * 4. save response object in map to be called by send() in the future
+ * 5. remove request after processing
  * @param socket 
  */
 void	Server::process(long socket)
@@ -241,15 +242,12 @@ void	Server::process(long socket)
 
 	raw_req = this->_requests[socket];
 
-	//check for chunked encoding and handle that seperately (?)
+	//check for chunked request and proceed to unchunk them
 	if (raw_req.find("Transfer-Encoding: chunked") != std::string::npos ||
 		raw_req.find("Transfer-Encoding: chunked") < raw_req.find(CRLF)
 	)
-	{
-		// std::cout << "chunked encoding found \n;
-		// return ;
-		// this->_process_chunked(socket);
-	}
+
+		this->_unchunk_chunks(socket);
 
 	//no chunk, proceeed as normal
 	Request request(raw_req);
@@ -260,7 +258,6 @@ void	Server::process(long socket)
 	//remove prev response if any and add response to map
 	this->_responses.erase(socket);
 	this->_responses.insert(std::make_pair(socket, response.get_response()));
-	// std::cout << "respose generated  for socket " << socket <<  this->_responses[socket];
 
 	//remove request
 	this->_requests.erase(socket);
@@ -284,4 +281,34 @@ int	Server::send(long socket)
 	std::cout << BOLDGREEN << "Response : " << response_raw.substr(0, response_raw.find("\n")) << RESET << "\n";
 	res = ::send(socket, response_raw.c_str(), response_raw.size(), 0);
 	return res;
+}
+
+//manipulates a chunked response string
+void	Server::_unchunk_chunks(long socket)
+{
+	std::string	req_raw;
+	std::string	head;
+	std::string	chunks;
+	std::string	subchunk;
+	std::string	body;
+	int	chunksize;
+	size_t	i;
+
+	req_raw = this->_requests[socket];
+	head = req_raw.substr(0, req_raw.find(CRLF));
+	chunks = req_raw.substr(req_raw.find(CRLF) + 4);
+	subchunk = chunks.substr(0, 100);
+	chunksize = strtol(subchunk.c_str(), NULL, 16);
+	i = 0;
+
+	while (chunksize)
+	{
+		i = chunks.find("\r\n", i) + 2;
+		body += chunks.substr(i, chunksize);
+		i += chunksize + 2;
+		subchunk = chunks.substr(i, 100);
+		chunksize = strtol(subchunk.c_str(), NULL, 16);
+	}
+
+	this->_requests[socket] = head + CRLF + body + CRLF;
 }

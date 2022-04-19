@@ -92,7 +92,7 @@ void	Response::_process_get(Request request)
 	this->_generate_response(200, file_contents);
 }
 
-//process put request
+//process post request
 void	Response::_process_post(Request request)
 {
 	std::string							request_body;
@@ -153,11 +153,6 @@ void	Response::_process_post(Request request)
 			this->_generate_response(500, "Internal Server Error");
 		return ;
 	}
-	// file_path = upload_path + std::string("somefile.png");
-	// request_body = request.get_body();
-	// new_file.open(file_path.c_str());
-	// new_file << request_body;
-	// new_file.close();
 	// std::cout << "raw req from response " << request.get_raw() << "\n";
 	this->_generate_response(200, "");
 }

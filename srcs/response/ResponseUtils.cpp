@@ -1,5 +1,18 @@
 #include "Response.hpp"
 
+/**
+ * @brief Commence uplaod operation and write file to fs
+ * 		(Will not write if file already exists / Does not update)
+ * 
+ * 1. It will check if the file exists by opening it in read mode
+ * 	- return 2 if exists
+ * 2. Open the file in write mode and write contents to file
+ * 	- return 1 if error
+ * 
+ * @param file_path 
+ * @param file_contents 
+ * @return int 0 OK, 2 File exists, 1 Error
+ */
 int	Response::_do_upload(std::string file_path, std::string file_contents)
 {
 	std::ofstream						new_file;
@@ -27,6 +40,13 @@ int	Response::_do_upload(std::string file_path, std::string file_contents)
 	return 0;
 }
 
+/**
+ * @brief Gets the body of the uploaded file
+ * 
+ * @param form_data parsed form data as map
+ * @param file_content file content string to write to
+ * @return int 0 if no error, 1 if error
+ */
 int		Response::_get_file_upload_body(std::map<std::string, std::string> form_data, std::string &file_content)
 {
 	std::map<std::string, std::string>::iterator	iter;
@@ -56,6 +76,7 @@ int		Response::_get_file_upload_body(std::map<std::string, std::string> form_dat
 	}
 	return 0;
 }
+
 /**
  * @brief Gets the name of the uploaded file
  * 		In form data, uploaded files comes with a name by default. 

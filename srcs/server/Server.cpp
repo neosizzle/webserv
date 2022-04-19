@@ -154,9 +154,7 @@ int	Server::recv(long socket)
 	std::string	buffer;
 	int			content_len;
 
-	std::cout << "calling recv\n";
 	res = ::recv(socket, buf, BUFF_SIZE - 1, 0);
-	std::cout << "recv res " << res << "\n";
 
 	//error checking
 	if (res <= 0)
@@ -200,7 +198,6 @@ int	Server::recv(long socket)
 					.substr(this->_requests[socket]
 					.find("Content-Length: ") + 16, 10)
 					.c_str());
-		std::cout << "content length " << content_len + this->_requests[socket].find(CRLF) + 4 << " , request saved size " << this->_requests[socket].size() << "\n";
 		if (this->_requests[socket].size() >= content_len + this->_requests[socket].find(CRLF) + 4)
 		{
 			// std::cout << "returning zero, req complete\n";
@@ -280,9 +277,11 @@ void	Server::process(long socket)
 int	Server::send(long socket)
 {
 	std::string	response_raw;
+	std::string	request_raw;
 	int			res;
 
 	response_raw = this->_responses[socket];
+	std::cout << BOLDGREEN << "Response : " << response_raw.substr(0, response_raw.find("\n")) << RESET << "\n";
 	res = ::send(socket, response_raw.c_str(), response_raw.size(), 0);
 	return res;
 }

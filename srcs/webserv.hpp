@@ -43,6 +43,7 @@
 #include <iostream>
 #include <sstream>
 #include <fstream>
+#include <ostream>
 
 //network
 #include <sys/socket.h> 

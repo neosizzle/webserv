@@ -95,10 +95,70 @@ void	Response::_process_get(Request request)
 //process put request
 void	Response::_process_post(Request request)
 {
-	std::string	request_body;
+	std::string							request_body;
+	std::string							file_path;
+	std::string							file_name;
+	std::map<std::string, std::string>	request_headers;
+	std::string							request_content_type;
+	std::string							err_msg;
+	std::map<std::string, std::string>	form_data;
+	std::string							file_content;
+	int									upload_status;
 
+	//check valid body and headers
+	request_headers = request.get_headers();
+	if (!request_headers.count("Content-Type"))
+	{
+		this->_generate_response(400, "Invalid request body, Missing Content-Type in header.");
+		return ;
+	}
+	request_content_type =  request_headers["Content-Type"];
+	if (request_content_type.find("multipart/form-data") == std::string::npos)
+	{
+		err_msg = std::string("Invalid request body, Expecting multipart/form-data in header, got ") + request_content_type;
+		this->_generate_response(400, err_msg);
+		return ;
+	}
+	//check for upload path
+
+	//valdiate uplaod path is a directory
+	if (upload_path.find_last_of("/") != upload_path.size() - 1) upload_path += "/";
+
+	//extract binary data and file name
 	request_body = request.get_body();
-	std::cout << "raw req from response " << request.get_raw() << "\n";
+	if (this->_parse_form_data(request_body, request_content_type.substr(request_content_type.find("boundary=") + 9, request_content_type.size()), form_data))
+	{
+		err_msg = std::string("Form data is invalid, Bad format");
+		this->_generate_response(400, err_msg);
+		return ;
+	}
+
+	//form data validatation
+	if (form_data.size() > 2 || this->_get_file_upload_name(form_data, file_name))
+	{
+		err_msg = std::string("Form data is invalid, Expecting name (text) and file (file)");
+		this->_generate_response(400, err_msg);
+		return ;
+	}
+
+	//extract file contents and upload to fs
+	if (this->_get_file_upload_body(form_data, file_content))
+		this->_generate_response(500, "Internal Server Error: Cant read body");
+	upload_status = this->_do_upload(upload_path + file_name, file_content);
+	if (upload_status > 0)
+	{
+		if (upload_status == 2)
+			this->_generate_response(400, "File already exists");
+		else
+			this->_generate_response(500, "Internal Server Error");
+		return ;
+	}
+	// file_path = upload_path + std::string("somefile.png");
+	// request_body = request.get_body();
+	// new_file.open(file_path.c_str());
+	// new_file << request_body;
+	// new_file.close();
+	// std::cout << "raw req from response " << request.get_raw() << "\n";
 	this->_generate_response(200, "");
 }
 

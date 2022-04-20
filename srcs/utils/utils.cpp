@@ -149,3 +149,23 @@ void	trimWhiteSpace(std::string &line)
 			line.erase(i, 1);
 	}
 }
+
+void	moveToBraces(std::vector<std::string>::iterator &iter, std::vector<std::string> tokens)
+{
+	std::stack<bool>					braces;
+
+	if (*iter != "{")
+		return ;
+	braces.push(true);
+	++iter;
+	while (!braces.empty() && (iter != tokens.end()))
+	{
+		if (*iter == "{")
+			braces.push(true);
+		else if (*iter == "}")
+			braces.pop();
+		if (braces.empty())
+			return ;
+		++iter;
+	}
+}

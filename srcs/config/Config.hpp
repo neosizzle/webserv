@@ -4,13 +4,17 @@
 class Config
 {
 	private:
-		std::string			_raw;
-		//need tokens?
-		std::vector<Server>	_servers;
+		int									_fd;
+		std::string							_raw;
+		std::string							_path;
+		std::vector<std::string>			_tokens;
+		std::vector<Server>					_servers;
 
-		void				tokenize();
-
+		void				_tokenize();
+		void				_parse();
+		bool				_is_valid_directive(std::string str);
 	public:
+		Config();
 		Config(std::string cfg_filename);
 		~Config();
 };

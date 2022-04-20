@@ -21,7 +21,8 @@
 #define BOLDWHITE   "\033[1m\033[37m"      /* Bold White */
 
 //constants
-#define BUFF_SIZE 100000
+#define BUFF_SIZE 1000000
+#define CRLF "\r\n\r\n"
 
 //C imports
 #include <stdio.h>
@@ -30,6 +31,8 @@
 #include <fcntl.h>
 #include <sys/time.h>
 #include <string.h>
+#include <sys/types.h>
+#include <dirent.h>
 
 //containers
 #include <vector>
@@ -38,12 +41,19 @@
 
 //input / output
 #include <iostream>
+#include <sstream>
+#include <fstream>
+#include <ostream>
 
 //network
 #include <sys/socket.h> 
 #include <netinet/in.h>
+#include <arpa/inet.h>
 
 //fd
 #include <sys/select.h>
 
+//func macro
+#define ITOA( x ) static_cast< std::ostringstream & >( \
+        ( std::ostringstream() << std::dec << x ) ).str()
 #endif  //!__WEBSERV__H 

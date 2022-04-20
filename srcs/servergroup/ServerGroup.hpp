@@ -20,7 +20,7 @@ public:
 	ServerGroup(const ServerGroup &other);
 	~ServerGroup();
 
-	ServerGroup &operator=(const ServerGroup &other){return *this;}
+	ServerGroup &operator=(const ServerGroup &other);
 
 	//config
 	void	configure(); //start parsing config

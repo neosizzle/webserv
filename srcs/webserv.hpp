@@ -23,6 +23,7 @@
 //constants
 #define BUFF_SIZE 1000000
 #define CRLF "\r\n\r\n"
+#define DEFAULT_CONF "/home/nszl/42cursus/webserv/config/sample.conf"
 
 //C imports
 #include <stdio.h>

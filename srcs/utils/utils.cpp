@@ -128,3 +128,24 @@ int	ft_readfile(std::string path, std::string &res)
 	infile.close();
 	return 0;
 }
+
+/**
+ * @brief Trims all whitespace in a given line
+ * 
+ * @param line 
+ */
+void	trimWhiteSpace(std::string &line)
+{
+	int i;
+
+	i = 0;
+	while (isspace(line[i]))
+		line.erase(0, 1);
+	
+	i = line.size() - 1;
+	if (i > 0)
+	{
+		while (isspace(line[i]))
+			line.erase(i, 1);
+	}
+}

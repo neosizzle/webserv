@@ -3,23 +3,24 @@
 /*                                                        :::      ::::::::   */
 /*   ConfigServers.hpp                                  :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: zhliew <zhliew@student.42.fr>              +#+  +:+       +#+        */
+/*   By: jng <jng@student.42kl.edu.my>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/04/12 14:16:12 by zhliew            #+#    #+#             */
-/*   Updated: 2022/04/18 21:21:33 by zhliew           ###   ########.fr       */
+/*   Updated: 2022/04/20 08:05:46 by jng              ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #ifndef CONFIGSERVERS_HPP
 # define CONFIGSERVERS_HPP
 
-#include "../webserv.hpp"
+#include "webserv.hpp"
+#include "ConfigLocation.hpp"
 
-class Config
+class ConfigServers
 {
 	public:
 		ConfigServers();
-		ConfigServers(Config const &ref);
+		ConfigServers(ConfigServers const &ref);
 		~ConfigServers();
 
 		ConfigServers	&operator=(ConfigServers const &ref);
@@ -28,7 +29,7 @@ class Config
 		int				&getMaxBody() const;
 		std::string		&getErrorPath() const;
 		std::string		&getHost() const;
-		std::vector<std::strinf>	&getNames() const;
+		std::vector<std::string>	&getNames() const;
 		std::map<std::string, ConfigLocation>	&getLocation() const;
 	
 		typedef void (ConfigServers::*FunctionPtr)(const char*);

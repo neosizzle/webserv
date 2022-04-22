@@ -129,6 +129,17 @@ int	ft_readfile(std::string path, std::string &res)
 	return 0;
 }
 
+std::vector<int>::iterator ft_find( std::vector<int>::iterator first, std::vector<int>::iterator last, int & value )
+{
+	while (first != last)
+	{
+		if (*first == value)
+			return first;
+		first++;
+	}
+	return first;
+}
+
 /**
  * @brief Trims all whitespace in a given line
  * 
@@ -168,4 +179,26 @@ void	moveToBraces(std::vector<std::string>::iterator &iter, std::vector<std::str
 			return ;
 		++iter;
 	}
+}
+
+/**
+ * @brief Determines if directive input is valid
+ * 
+ * @param str 
+ * @return true 
+ * @return false 
+ */
+bool	isValidDirective(std::string str)
+{
+	return (str == "listen" ||
+          str == "server_name" ||
+          str == "root" ||
+          str == "auth" ||
+          str == "error_page" ||
+          str == "upload" ||
+          str == "autoindex" ||
+          str == "index" ||
+          str == "cgi" ||
+          str == "cgi_bin" ||
+		  str == "client_max_body_size");
 }

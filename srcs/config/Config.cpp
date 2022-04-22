@@ -1,4 +1,5 @@
 #include "Config.hpp"
+#include "utils.hpp"
 
 Config::Config()
 {
@@ -68,7 +69,7 @@ void	Config::_tokenize()
 				}
 				brackets.pop();
 			}
-			if (this->_is_valid_directive(token_str) && line[line.find_last_not_of(" \t", line.length())] != ';')
+			if (isValidDirective(token_str) && line[line.find_last_not_of(" \t", line.length())] != ';')
 			{
 				err_msg =  "Missing ';' at line  " + ITOA(line_idx);
 				throw std::runtime_error(err_msg);
@@ -94,6 +95,7 @@ void	Config::_parse()
 {
 	std::vector<std::string>::iterator 	it;
 	int									servers_found;
+	std::vector<std::string>::iterator	it_begin;
 
 	this->_tokenize();
 	it = this->_tokens.begin();
@@ -102,27 +104,18 @@ void	Config::_parse()
 	{
 		if (*it == "server")
 		{
+			ServerConfig srv_cfg;
+
+			it_begin = it;
 			moveToBraces(++it, this->_tokens);
-			std::cout << *it << "\n";
+			srv_cfg.server(it_begin, it);
+
+			//add servcfg to vect
+
 			servers_found++;
 		}
 		else
 			it++;
 	}
 	std::cout << "servers found " << servers_found << "\n";
-}
-
-//is valid directive
-bool	Config::_is_valid_directive(std::string str)
-{
-	 return (str == "listen" ||
-          str == "server_name" ||
-          str == "root" ||
-          str == "auth" ||
-          str == "error_page" ||
-          str == "upload" ||
-          str == "autoindex" ||
-          str == "index" ||
-          str == "cgi" ||
-          str == "cgi_bin");
 }

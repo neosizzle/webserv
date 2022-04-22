@@ -1,5 +1,5 @@
 #include "webserv.hpp"
-#include "Server.hpp"
+#include "ServerConfig.hpp"
 //wrapper config class, will contain multiple server config blocks
 class Config
 {
@@ -8,7 +8,7 @@ class Config
 		std::string							_raw;
 		std::string							_path;
 		std::vector<std::string>			_tokens;
-		std::vector<Server>					_servers;
+		std::vector<ServerConfig>			_servers;
 
 		void				_tokenize();
 		void				_parse();

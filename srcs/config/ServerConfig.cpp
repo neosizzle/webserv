@@ -52,37 +52,59 @@ int		ServerConfig::_parse_server_names(std::vector<std::string>::iterator &iter)
 
 int		ServerConfig::_parse_location(std::vector<std::string>::iterator &iter)
 {
-	std::cout << "parsing location...\n";
+	this->_logger.log(INFO, "parsing location...");
+	return 0;
 }
 
 int		ServerConfig::_parse_listen(std::vector<std::string>::iterator &iter)
 {
 	int			port;
+	std::string	ip;
+	std::string	listen_str;
 	std::string	port_str;
 
-	port_str = *iter;
-	if (port_str.find_first_not_of("1234567890") != std::string::npos)
+	listen_str = *iter;
+	 if (listen_str.find(':') != std::string::npos) {
+		ip = listen_str.substr(0, listen_str.find(':'));
+
+		std::string port_str = listen_str.substr(listen_str.find(':') + 1);
+
+		if (port_str.find_first_not_of("0123456789") != std::string::npos)
+			throw std::runtime_error("invalid port :" + port_str);
+
+		port = std::atoi(port_str.c_str());
+		if (port > 65535)
+			throw std::runtime_error("Port too big");
+	}
+	else if (listen_str.find_first_not_of("0123456789") != std::string::npos) {
+		ip = listen_str;
+	}
+	if (listen_str.find_first_not_of("1234567890") != std::string::npos)
 	{
-		std::cerr << "Invalid port " << port_str <<"\n";
+		std::cerr << "Invalid port " << listen_str <<"\n";
 		return 1;
 	}
 	port = std::atoi((*iter).c_str());
 	if (port > 65535)
 	{
-		std::cerr << "Port too big " << port_str <<"\n";
+		std::cerr << "Port too big " << listen_str <<"\n";
 		return 1;
 	}
-	if (ft_find(this->_ports.begin(), this->_ports.end(), port) != this->_ports.end())
+
+	const Listen		listen(ip, port);
+
+	if (std::find(this->_listens.begin(), this->_listens.end(), listen) != this->_listens.end())
 	{
-		std::cerr << "Duplicate port " << port_str <<"\n";
+		std::cerr << "Duplicate port " << listen_str <<"\n";
 		return 1;
 	}
 	if (*++iter != ";")
 	{
-		std::cerr << "Multiple ports " << port_str <<"\n";
+		std::cerr << "Multiple ports " << listen_str <<"\n";
 		return 1;
 	}
-	this->_ports.push_back(port);
+	this->_listens.clear();
+	this->_listens.push_back(listen);
 	return 0;
 }
 
@@ -203,7 +225,7 @@ int		ServerConfig::_parse_cgi_bin(std::vector<std::string>::iterator &iter)
 void	ServerConfig::_log()
 {
 	std::cout << "=========log==========\n";
-	std::cout << "Port : " << this->_ports[0] << "\n";
+	std::cout << "Listen : " << this->_listens[0].ip << ":" << this->_listens[0].port << "\n";
 	std::cout << "Serve rname : " << this->_server_name[0] << "\n";
 	std::cout << "Erro page : " << this->_error_pages.begin()->first << "\n";
 	std::cout << "Max size: " << this->_max_size << "\n";
@@ -214,7 +236,7 @@ void	ServerConfig::_log()
 	std::cout << "index_files[0] : " << this->_index_files[0] << "\n";
 	std::cout << "upload_path : " << this->_upload_path << "\n";
 	// std::cout << "_locations : " << this->__locations << "\n";
-		std::cout << "=========log==========\n";
+	std::cout << "=========log==========\n";
 
 }
 
@@ -237,16 +259,19 @@ void	ServerConfig::_init_default_values()
 	std::vector<std::string>			init_methods;
 	std::string							init_root_path;
 	std::vector<std::string>			init_index_files;
+	std::vector<Listen>					init_listens;
+	Listen								init_listen;
 
 	init_serv_names.push_back("localhost");
 	init_root_path = "/home/nszl/42cursus/webserv/html";
 	init_err_pages.insert(std::make_pair(404, "404.html"));
 	init_methods.push_back("GET");
 	init_index_files.push_back("index.html");
+	init_listens.push_back(init_listen);
+	this->_listens = init_listens;
 	this->_root_path = init_root_path;
 	this->_index_files = init_index_files;
 	this->_methods = init_methods;
-	this->_port = 8080;
 	this->_server_name = init_serv_names;
 	this->_error_pages = init_err_pages;
 	this->_max_size = -1;
@@ -264,3 +289,6 @@ void	ServerConfig::server(std::vector<std::string>::iterator start, std::vector<
 	this->_tokens = temp_vect;
 	this->_parse();
 }
+
+//getters
+std::vector<Listen> ServerConfig::get_listens(){return this->_listens;}

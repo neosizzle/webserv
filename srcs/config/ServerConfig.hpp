@@ -3,6 +3,18 @@
 
 #include "webserv.hpp"
 #include "LocationConfig.hpp"
+#include "Logger.hpp"
+
+struct Listen
+{
+	std::string	ip;
+	uint32_t	port;
+
+	Listen() : ip(""), port(8080){};
+	Listen(std::string _ip, uint32_t _port) : ip(_ip), port(_port){};
+};
+
+inline bool operator==(const Listen &lhs, const Listen &rhs){return lhs.ip == rhs.ip && lhs.port == rhs.port;}
 
 //server config class, will contain data for server block
 class ServerConfig
@@ -10,8 +22,9 @@ class ServerConfig
 	typedef int (ServerConfig::*type)(std::vector<std::string>::iterator &);
 
 	private:
-
+		Logger								_logger;
   		std::map<std::string, type>			_directive_operations;
+		std::vector<Listen>					_listens;
 		std::vector<int>					_ports;
 		std::vector<std::string>			_tokens;
 		int									_port;
@@ -60,6 +73,7 @@ class ServerConfig
 		long								get_max_size();
 		std::map<std::string, std::string>	get_cgi_info();
 		std::vector<LocationConfig>			get_locations();
+		std::vector<Listen>					get_listens();
 
 		//setters
 		void	set_port(int port);

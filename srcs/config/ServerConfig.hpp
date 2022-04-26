@@ -25,9 +25,7 @@ class ServerConfig
 		Logger								_logger;
   		std::map<std::string, type>			_directive_operations;
 		std::vector<Listen>					_listens;
-		std::vector<int>					_ports;
 		std::vector<std::string>			_tokens;
-		int									_port;
 		std::vector<std::string>			_server_name;
 		std::map<int, std::string>			_error_pages;
 		long								_max_size;
@@ -39,6 +37,7 @@ class ServerConfig
 		std::vector<std::string>			_index_files;
 		std::string							_upload_path;
 		std::vector<ServerConfig> 			_locations;
+		std::string							_location_url;
 
 		void	_init_default_values();//initializes default mandatory directives
 		void	_init_dir_operations();//initialize directive operations
@@ -55,6 +54,8 @@ class ServerConfig
 		int		_parse_autoindex(std::vector<std::string>::iterator &iter);//parse autoidx
 		int		_parse_upload(std::vector<std::string>::iterator &iter);//parse upload path
 		int		_parse_cgi_bin(std::vector<std::string>::iterator &iter);//parse cgi bin path
+		int		_parse_cgi(std::vector<std::string>::iterator &iter);//parse cgi info
+		int		_process_locations(std::vector<std::string>::iterator &iter, std::vector<ServerConfig> &locations);//parse location block
 		void	_log();
 
 		friend class LocationConfig;
@@ -67,7 +68,6 @@ class ServerConfig
 		ServerConfig & operator=(const ServerConfig &other);
 
 		//getters
-		int									get_port();
 		std::vector<std::string>			get_server_name();
 		std::map<int, std::string>			get_error_pages();
 		long								get_max_size();
@@ -76,7 +76,6 @@ class ServerConfig
 		std::vector<Listen>					get_listens();
 
 		//setters
-		void	set_port(int port);
 		void	set_server_name(std::vector<std::string> server_name);
 		void	set_error_pages(std::map<int, std::string> error_pages);
 		void	set_max_size(long max_size);

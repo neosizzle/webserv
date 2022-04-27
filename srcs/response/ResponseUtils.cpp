@@ -323,5 +323,6 @@ void	Response::_generate_autoidx(std::string path, std::string root)
 		else
 			ss << "<br/>" << "<a href = " << path + file_name << ">" << file_name << "</a>";
     }
+	closedir(FD);
 	this->_generate_response(200, ss.str());
 }

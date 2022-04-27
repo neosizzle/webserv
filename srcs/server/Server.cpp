@@ -25,6 +25,9 @@ Server::Server()
  */
 Server::Server(unsigned int host, int port)
 {
+	int	yes;
+
+	yes = 1;
 	this->_host = host;
 	this->_port = port;
 
@@ -32,35 +35,35 @@ Server::Server(unsigned int host, int port)
 	this->_server_address.sin_addr.s_addr = htonl(host);
 	this->_server_address.sin_port = htons(port);
 
+	//check this syscall
 	this->_server_fd = socket(AF_INET, SOCK_STREAM, 0);
+	setsockopt(this->_server_fd, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(int));
 	if (this->_server_fd < 0)
 	{
-		perror("Server initialize fail, socket failed to create");
+		this->_logger.log(ERROR, "Socket failed to create.");
+		perror("");
 		exit (1);
 	}
 
 	if (bind(this->_server_fd, (struct sockaddr *)&(this->_server_address), sizeof(this->_server_address)) < 0)
 	{
-		perror("Server initialize fail, bind operation failed");
+		this->_logger.log(ERROR, "Socket failed to bind.");
+		perror("");
 		exit (1);
 	}
 
 	if (listen(this->_server_fd, 69) < 0)
 	{
+		this->_logger.log(ERROR, "Socket failed to listen.");		
 		perror("Server initialize fail, listen failed");
 		exit (1);
 	}
-	std::cout << "Server up and listening on port " << port << "\n";
+	this->_logger.log(INFO, "Server up and listening on port " + ITOA(port));
 }
 
-Server::~Server()
-{
-}
+Server::~Server(){}
 
-Server::Server(const Server &other)
-{
-	*this = other;
-}
+Server::Server(const Server &other){*this = other;}
 
 /**
  * @brief assignment operator for Server
@@ -99,6 +102,17 @@ struct sockaddr_in Server::get_server_address()
 	return this->_server_address;
 }
 
+/**
+ * @brief Closes listening socket
+ * 
+ */
+void	Server::shutdown()
+{
+	this->_logger.log(INFO, "Server at port " + ITOA(this->_port) + " shutting down..");
+	if (this->_server_fd != -1)
+		::close(this->_server_fd);
+}
+
 std::map<long ,std::string> Server::get_responses(){return this->_responses;}
 
 /**
@@ -118,14 +132,14 @@ long	Server::accept()
 	client_fd = ::accept(this->_server_fd, (struct sockaddr *)&client_addr, (socklen_t *)&client_addr_len);
 	if (client_fd == -1)
 	{
-		perror("Server accept failed");
-		exit(1);
+		this->_logger.log(ERROR, "Accept fail");
+		perror("");
+		return -1;
 	}
 	fcntl(client_fd, F_SETFL, O_NONBLOCK);
 
 	//logging
-	std::cout << BOLDGREEN << "New connection from " << ft_ltip(ntohl(client_addr.sin_addr.s_addr))
-	<< RESET << "\n";
+	this->_logger.log(INFO, "New connection from " + ft_ltip(ntohl(client_addr.sin_addr.s_addr)));
 
 	return client_fd;
 }
@@ -161,9 +175,12 @@ int	Server::recv(long socket)
 	{
 		this->close(socket);
 		if (!res)
-			std::cout << BOLDYELLOW << "Client closed connection" << RESET << "\n";
+			this->_logger.log(WARNING, "Client closed connection");
 		else
-			perror("Recv operation failed");
+		{
+			this->_logger.log(ERROR, "Recv operation failed");
+			perror("");
+		}
 		return -1;
 	}
 
@@ -217,9 +234,11 @@ int	Server::recv(long socket)
  */
 void	Server::close(long socket)
 {
-	std::cout << BOLDGREEN << "Closing connection... " << socket << RESET << "\n";
 	if (socket > 0)
+	{
+		this->_logger.log(INFO, "Closing connection "+ ITOA(socket));
 		::close(socket);
+	}
 	this->_requests.erase(socket);
 }
 
@@ -278,7 +297,7 @@ int	Server::send(long socket)
 	int			res;
 
 	response_raw = this->_responses[socket];
-	std::cout << BOLDGREEN << "Response : " << response_raw.substr(0, response_raw.find("\n")) << RESET << "\n";
+	this->_logger.log(INFO, "Response : " + response_raw.substr(0, response_raw.find("\n")));
 	res = ::send(socket, response_raw.c_str(), response_raw.size(), 0);
 	return res;
 }

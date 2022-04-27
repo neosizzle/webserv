@@ -14,7 +14,11 @@ Config::Config(std::string cfg_filename = "/home/nszl/42cursus/webserv/config/sa
 	this->_path = cfg_filename;
 	
 	//start parsing raw
-	this->_parse();
+	if (this->_parse() != 0)
+	{
+		this->_logger.log(ERROR, "Parse error, exiting...");
+		exit(1);
+	}
 }
 
 Config::~Config(){}
@@ -91,7 +95,7 @@ void	Config::_tokenize()
 }
 
 //parsing
-void	Config::_parse()
+int	Config::_parse()
 {
 	std::vector<std::string>::iterator 	it;
 	int									servers_found;
@@ -108,7 +112,8 @@ void	Config::_parse()
 
 			it_begin = it;
 			moveToBraces(++it, this->_tokens);
-			srv_cfg.server(it_begin, it);
+			if (srv_cfg.server(it_begin, it) != 0)
+				return 1;
 
 			//add servcfg to vect
 
@@ -117,5 +122,5 @@ void	Config::_parse()
 		else
 			it++;
 	}
-	std::cout << "servers found " << servers_found << "\n";
+	return 0;
 }

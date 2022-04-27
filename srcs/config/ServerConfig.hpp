@@ -38,10 +38,11 @@ class ServerConfig
 		std::string							_upload_path;
 		std::vector<ServerConfig> 			_locations;
 		std::string							_location_url;
+		std::map<int, std::string>			_redirect;
 
 		void	_init_default_values();//initializes default mandatory directives
 		void	_init_dir_operations();//initialize directive operations
-		void	_parse();//parse tokens into data
+		int		_parse();//parse tokens into data
 
 		int		_parse_location(std::vector<std::string>::iterator &iter);//parse location data
 		int		_parse_listen(std::vector<std::string>::iterator &iter);//parse listen port
@@ -55,6 +56,7 @@ class ServerConfig
 		int		_parse_upload(std::vector<std::string>::iterator &iter);//parse upload path
 		int		_parse_cgi_bin(std::vector<std::string>::iterator &iter);//parse cgi bin path
 		int		_parse_cgi(std::vector<std::string>::iterator &iter);//parse cgi info
+		int		_parse_redirect(std::vector<std::string>::iterator &iter);
 		int		_process_locations(std::vector<std::string>::iterator &iter, std::vector<ServerConfig> &locations);//parse location block
 		void	_log();
 
@@ -82,7 +84,7 @@ class ServerConfig
 		void	set_cgi_info(std::map<std::string, std::string> cgi_info);
 		void	set_locations(std::vector<ServerConfig> locations);
 
-		void	server(std::vector<std::string>::iterator start, std::vector<std::string>::iterator end);
+		int		server(std::vector<std::string>::iterator start, std::vector<std::string>::iterator end);
 };
 
 #endif  //!__SERVERCONFIG__H__

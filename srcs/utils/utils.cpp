@@ -128,3 +128,77 @@ int	ft_readfile(std::string path, std::string &res)
 	infile.close();
 	return 0;
 }
+
+std::vector<int>::iterator ft_find( std::vector<int>::iterator first, std::vector<int>::iterator last, int & value )
+{
+	while (first != last)
+	{
+		if (*first == value)
+			return first;
+		first++;
+	}
+	return first;
+}
+
+/**
+ * @brief Trims all whitespace in a given line
+ * 
+ * @param line 
+ */
+void	trimWhiteSpace(std::string &line)
+{
+	int i;
+
+	i = 0;
+	while (isspace(line[i]))
+		line.erase(0, 1);
+	
+	i = line.size() - 1;
+	if (i > 0)
+	{
+		while (isspace(line[i]))
+			line.erase(i, 1);
+	}
+}
+
+void	moveToBraces(std::vector<std::string>::iterator &iter, std::vector<std::string> tokens)
+{
+	std::stack<bool>					braces;
+
+	if (*iter != "{")
+		return ;
+	braces.push(true);
+	++iter;
+	while (!braces.empty() && (iter != tokens.end()))
+	{
+		if (*iter == "{")
+			braces.push(true);
+		else if (*iter == "}")
+			braces.pop();
+		if (braces.empty())
+			return ;
+		++iter;
+	}
+}
+
+/**
+ * @brief Determines if directive input is valid
+ * 
+ * @param str 
+ * @return true 
+ * @return false 
+ */
+bool	isValidDirective(std::string str)
+{
+	return (str == "listen" ||
+          str == "server_name" ||
+          str == "root" ||
+          str == "auth" ||
+          str == "error_page" ||
+          str == "upload" ||
+          str == "autoindex" ||
+          str == "index" ||
+          str == "cgi" ||
+          str == "cgi_bin" ||
+		  str == "client_max_body_size");
+}

@@ -3,6 +3,7 @@
 #include "webserv.hpp"
 #include "Request.hpp"
 #include "Response.hpp"
+#include "Logger.hpp"
 
 //class for a single server instance
 class Server
@@ -14,6 +15,7 @@ private:
 	unsigned int				_host;			//hostname (from config)
 	std::map<long, std::string>	_requests; //pending requests to handle (from multiple clients or same clients) (client fd, raw request)
 	std::map<long, std::string>	_responses; //pending requests to send(from multiple clients or same clients) (client fd, raw response)
+	Logger						_logger;//logging
 
 	void						_unchunk_chunks(long socket); //merging chunked requests before processing them as 1 request	
 
@@ -34,6 +36,7 @@ public:
 	int						configure();
 
 	//operations
+	void					shutdown();				//closes listening socket	
 	long					accept(); 				//accepts connection
 	int						recv(long socket); 		//reads connection
 	void					close(long socket);		//closes connection

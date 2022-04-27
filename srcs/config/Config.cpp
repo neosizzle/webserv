@@ -1,155 +1,121 @@
-/* ************************************************************************** */
-/*                                                                            */
-/*                                                        :::      ::::::::   */
-/*   Config.cpp                                         :+:      :+:    :+:   */
-/*                                                    +:+ +:+         +:+     */
-/*   By: zhliew <zhliew@student.42.fr>              +#+  +:+       +#+        */
-/*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2022/04/11 14:36:26 by zhliew            #+#    #+#             */
-/*   Updated: 2022/04/19 01:44:41 by zhliew           ###   ########.fr       */
-/*                                                                            */
-/* ************************************************************************** */
-
 #include "Config.hpp"
+#include "utils.hpp"
 
-/*
-** ------------------------------- CONSTRUCTOR --------------------------------
-*/
-
-Config::Config(char const *filename) : _bracket(0), _filename(filename)
+Config::Config()
 {
-	_file.open(filename);
+	this->_path = DEFAULT_CONF;
+
+	//start parsing raw
+	this->_parse();
 }
 
-Config::Config(Config const &ref) : _bracket(ref._bracket), _buff(ref._buff), _servers(ref.servers)
+Config::Config(std::string cfg_filename = "/home/nszl/42cursus/webserv/config/sample.conf")
 {
-	_file.open(_filename.c_str());
-}
-
-/*
-** -------------------------------- DESTRUCTOR --------------------------------
-*/
-
-Config::~Config()
-{
-	_file.close();
-}
-
-/*
-** --------------------------------- FUNCTIONS --------------------------------
-*/
-
-void	Config::parseFile()
-{
-	while (std::getline(_file, _buff))
-	{
-		trimWhiteSpace(_buff);
-		if (!_buff.compare(0, 9, "server {"))
-		{
-			_bracket = 1;
-			createServer();
-		}
-		else if ((!_buff.compare(0, 1, "}") && _bracket == 1)|| !_buff.compare(0, 1, ""))
-			continue;
-		else
-			throw std::runtime_error(errParseMessage("Error: Config file's server block error\n"));
-	}
-}
-
-void	Config::createServer()
-{
-	ConfigServers	server;
-
-	while (_bracket > 0)
-	{
-		std::getline(_file, _buff);
-		trimWhiteSpace(_buff);
-
-		if (!_buff.compare(0, 9, "location "))
-			createLocation();
-		else if (!_buff.compare(0, 7, "listen "))
-			server.addDirectives(LIS, 7, _buff);
-		else if (!_buff.compare(0, 6, "error "))
-			server.addDirectives(ERR, 6, _buff);
-		else if (!_buff.compare(0, 12, "server_name "))
-			server.addDirectives(NAME, 12);
-		else if (!_buff.compare(0, 9, "max_body "))
-			server.addDirectives(BODY, 9, _buff);
-		else if (!_buff.compare(0, 5, "host "))
-			server.addDirectives(HOST, 5, _BUFF);
-		else if (!_buff.compare(0, 1, "}"))
-			_bracket--;
-		else
-			throw std::runtime_error(errParseMessage("Error: Config file's server block directive error\n"));
-	}
-	addServer(server);
-}
-
-void	Config::addServer(ConfigServers &server)
-{
-	int port;
+	this->_path = cfg_filename;
 	
-	port = server.getPort();
-	std::map<int, std::vector<ConfigServers> >::iterator it;
-
-	it = _servers.find(port);
-	if (it == _servers.end())
-	{
-		std::vector<ConfigServers> v_server(1, server);
-		_servers.insert(std::pair<int, std::vector(ConfigServers)> >(port, v_server));
-	}
-	else
-		it->second.push_back(server);
+	//start parsing raw
+	this->_parse();
 }
 
-void	Config::createLocation()
+Config::~Config(){}
+
+/**
+ * @brief Tokenizer
+ * 
+ * 1. Will open cfgfile from _path to read. Throws error if fails
+ * 2. Iterate through every line of file
+ * 	1. Append line to raw file content
+ * 	2. Will locate the beginning of new token by skipping whitesoaces
+ * 	3. While we still have tokens in the current line
+ * 		1. if its a comment, ignore token\
+ * 		2. locate last char (non whitespace) of token
+ * 		3. extract token string
+ * 		4. check for braces and semicolon
+ * 		5. push validated token string to _tokens vector
+ */
+void	Config::_tokenize()
 {
-	ConfigLocation	location;
-	std::string		url;
-	int				bracket;
+	std::ifstream		cfgfile(this->_path.c_str());
+	int					line_idx;
+	std::string			line;
+	std::string			token_str;
+	int					first;
+	int					last;
+	std::stack<bool>	brackets;
+	std::string			err_msg;
 
-	if (!_buff.compare(0, 9, "location "))
+	if (!cfgfile.is_open())
+		throw std::runtime_error("failed to open conf file");
+	line_idx = 0;
+	while (std::getline(cfgfile, line))
 	{
-		(!_buff.compare(_buff.size() - 1, 1, "{")) ? _buff.erase(_buff.size() - 1, 1) : 0;
-		url = *wsTrim(_buf);
-		url.replace(0, 8, "");
-		bracket = 1;
+		this->_raw += (line + "\n");
+		last = 0;
+		first = line.find_first_not_of(" \t", last);
+		while (first != std::string::npos)
+		{
+			if (line[first] == '#')
+				break ;
+			last = line.find_first_of(" \t", first);
+			token_str = line.substr(first, last - first);
+			if (token_str == "{")
+				brackets.push(true);
+			else if (token_str == "}")
+			{
+				if (brackets.empty())
+				{
+					err_msg = "Extra '}' at line " + ITOA(line_idx);
+					throw std::runtime_error(err_msg);
+				}
+				brackets.pop();
+			}
+			if (isValidDirective(token_str) && line[line.find_last_not_of(" \t", line.length())] != ';')
+			{
+				err_msg =  "Missing ';' at line  " + ITOA(line_idx);
+				throw std::runtime_error(err_msg);
+			}
+			if (token_str.find(";", token_str.length() - 1) != std::string::npos)
+			{
+				token_str.erase(token_str.length() - 1, 1);
+				this->_tokens.push_back(token_str);
+				this->_tokens.push_back(";");
+			}
+			else
+				this->_tokens.push_back(token_str);
+			first = line.find_first_not_of(" \t", last);
+		}
+		++line_idx;
 	}
+	if (!brackets.empty())
+		throw std::runtime_error("Unclosed or extra '{' ");
+}
 
-	while (bracket > 0)
+//parsing
+void	Config::_parse()
+{
+	std::vector<std::string>::iterator 	it;
+	int									servers_found;
+	std::vector<std::string>::iterator	it_begin;
+
+	this->_tokenize();
+	it = this->_tokens.begin();
+	servers_found = 0;
+	while (it != this->_tokens.end())
 	{
-		std::getline(_file, _buff)
-		trimWhiteSpace(_buff);
+		if (*it == "server")
+		{
+			ServerConfig srv_cfg;
 
-		if (!_buff.compare(0, 13, "allow_method "))
-			location.setDirective();
-		else if (!_buff.compare(0, 6, "index "))
-			location.setDirective();
-		else if (!_buff.compare(0, 12, "upload_path "))
-			location.setDirective();
-		else if (!_buff.compare(0, 5, "root "))
-			location.setDirective();
-		else if (!_buff.compare(0, 4, "cgi "))
-			location.setDirective();
-		else if (!_buff.compare(0, 10, "autoindex "))
-			location.setDirective();
-		else if (!_buff.compare(0, 9, "redirect "))
-			location.setDirective();
-		else if (!_buff.compare(0, 1, "}"))
-			bracket--;
+			it_begin = it;
+			moveToBraces(++it, this->_tokens);
+			srv_cfg.server(it_begin, it);
+
+			//add servcfg to vect
+
+			servers_found++;
+		}
 		else
-			throw std::runtime_error(errParseMessage("Error: Config file's location block directive error\n"));
+			it++;
 	}
-	addLocation(&location, url);
+	std::cout << "servers found " << servers_found << "\n";
 }
-
-void	Config::addLocation(ConfigLocation *location, std::string const &url)
-{
-	std::map<std::string, ConfigLocation>::iterator it = location.find(url);
-
-	if (it == location.end())
-		_loc_tmp.insert(std::pair<std::string, ConfigLocation>(name, *location));
-	else
-		throw std::runtime_error(errParseMessage("Error: Config file's location block duplicate\n"));
-}
-

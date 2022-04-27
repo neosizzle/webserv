@@ -1,5 +1,13 @@
 #include "ServerGroup.hpp"
 
+bool	ServerGroup::is_running = true;
+
+void	sig_handler(int signum)
+{
+	std::cout << "\n";
+	ServerGroup::is_running = false;
+}
+
 ServerGroup::ServerGroup()
 {
 	this->_max_fd = 0;
@@ -63,6 +71,10 @@ void	ServerGroup::setup(std::vector <int> ports)
 		std::cerr << BOLDRED << "Server group initialize fail, no ports provided" << RESET << "\n";
 		exit(1);
 	}
+
+	//atattch signal handler
+	signal(SIGINT, sig_handler);
+	signal(SIGTERM, sig_handler);
 }
 
 /**
@@ -93,22 +105,17 @@ void	ServerGroup::setup(std::vector <int> ports)
  * 					- accept connection on server and add client fd to reading set
  * 					- adjust max fd if needed
  * 
+ * 2. If a sigint is received, disconnect all clients and
+ *  close all server sockets (shutdown)
+ * 
  */
 void	ServerGroup::run()
 {
-	char	*response = "HTTP/1.1 200 OK\n"
-	"Date: Mon, 27 Jul 2009 12:28:53 GMT\n"
-	"Server: Apache/2.2.14 (Win32)\n"
-	"Last-Modified: Wed, 22 Jul 2009 19:15:56 GMT\n"
-	"Content-Length: 20\n"
-	"Content-Type: text/html\n"
-	"\n<h1>it works :o</h1>";
-
 	std::map<long, Server>::iterator 	servers_iter;
 	std::map<long, Server *>::iterator 	clients_iter;
 	std::vector<long>::iterator			responses_iter;
 
-	while (1)
+	while (this->is_running)
 	{
 		fd_set			read_fds_copy;
 		fd_set			write_fds;
@@ -130,14 +137,19 @@ void	ServerGroup::run()
 				responses_iter++;
 			}
 			avail_fds_found = select(this->_max_fd + 1, &read_fds_copy, &write_fds, NULL, &timeout);
-			// std::cout << "avail fd selceted " << avail_fds_found << "\n";
 		}
 		if (avail_fds_found == -1)
 		{
-			std::cerr << BOLDRED << "Select error " << RESET;
-			perror("");
-			exit(1);//error handling wip
+			if (this->is_running)
+			{
+				std::cerr << BOLDRED << "Select error " << RESET;
+				perror("");
+			}
 			FD_ZERO(&(this->_fd_set));
+			for (std::map<long, Server *>::iterator it = this->_clients.begin() ; it != this->_clients.end() ; it++)
+				it->second->close(it->first);
+			this->_clients.clear();
+			this->_clients_write.clear();
 			servers_iter = this->_servers.begin();
 			while (servers_iter != this->_servers.end())
 			{
@@ -171,10 +183,10 @@ void	ServerGroup::run()
 					// {
 					// 	this->_clients_write.erase(responses_iter);
 					// }
-					this->_clients[*responses_iter]->close(*responses_iter);//close socket 
-					this->_clients.erase(*responses_iter);//erase client 
+					// this->_clients[*responses_iter]->close(*responses_iter);//close socket 
+					// this->_clients.erase(*responses_iter);//erase client 
 					this->_clients_write.erase(responses_iter);//erase write set
-					FD_CLR(*responses_iter, &(this->_fd_set));//remove from fd set
+					// FD_CLR(*responses_iter, &(this->_fd_set));//remove from fd set
 					avail_fds_found = 0;
 					break;
 				}
@@ -221,7 +233,6 @@ void	ServerGroup::run()
 				if (FD_ISSET(servers_iter->first, &(read_fds_copy)))
 				{
 					accepted_client_fd = servers_iter->second.accept();
-					// std::cout << "accepted client " << accepted_client_fd <<"\n";
 					if (accepted_client_fd != -1)
 					{
 						FD_SET(accepted_client_fd, &(this->_fd_set));
@@ -235,9 +246,10 @@ void	ServerGroup::run()
 				servers_iter++;
 			}
 		}
-		
 	}
-	
+
+	for (std::map<long, Server>::iterator iter = this->_servers.begin(); iter != this->_servers.end(); iter++)
+		iter->second.shutdown();
 }
 
 ServerGroup::~ServerGroup()

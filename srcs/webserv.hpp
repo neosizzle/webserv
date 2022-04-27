@@ -23,6 +23,13 @@
 //constants
 #define BUFF_SIZE 1000000
 #define CRLF "\r\n\r\n"
+#define DEFAULT_CONF "/home/nszl/42cursus/webserv/config/sample.conf"
+
+//logging
+#define DEBUG 0
+#define INFO 1
+#define ERROR 2
+#define WARNING 3
 
 //C imports
 #include <stdio.h>
@@ -33,11 +40,13 @@
 #include <string.h>
 #include <sys/types.h>
 #include <dirent.h>
+#include <csignal>
 
 //containers
 #include <vector>
 #include <map>
 #include <stack>
+#include <algorithm>
 
 //input / output
 #include <iostream>

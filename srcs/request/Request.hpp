@@ -3,6 +3,7 @@
 #include "webserv.hpp"
 #include "utils.hpp"
 
+//class for a single request instance, contains http response data
 class Request
 {
 private:

@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   ConfigLocation.hpp                                 :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: zhliew <zhliew@student.42.fr>              +#+  +:+       +#+        */
+/*   By: jng <jng@student.42kl.edu.my>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/04/18 10:31:11 by zhliew            #+#    #+#             */
-/*   Updated: 2022/04/19 02:22:02 by zhliew           ###   ########.fr       */
+/*   Updated: 2022/04/20 08:28:10 by jng              ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,11 +15,11 @@
 
 #include "../webserv.hpp"
 
-class Config
+class ConfigLocation
 {
 	public:
 		ConfigLocation();
-		ConfigLocation(Config const &ref);
+		ConfigLocation(ConfigLocation const &ref);
 		~ConfigLocation();
 
 		ConfigLocation	&operator=(ConfigLocation const &ref);

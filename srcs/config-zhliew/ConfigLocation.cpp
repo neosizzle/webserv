@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   ConfigLocation.cpp                                 :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: zhliew <zhliew@student.42.fr>              +#+  +:+       +#+        */
+/*   By: jng <jng@student.42kl.edu.my>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/04/18 10:31:00 by zhliew            #+#    #+#             */
-/*   Updated: 2022/04/19 02:13:21 by zhliew           ###   ########.fr       */
+/*   Updated: 2022/04/20 08:38:16 by jng              ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -102,7 +102,7 @@ void	ConfigLocation::setMethod(char const *s)
 
 	while (token)
 	{
-		_methos.push_back(token);
+		_method.push_back(token);
 		token = strtok(tmp, "\t\v\f\r ");
 	}
 	free(tmp);

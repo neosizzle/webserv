@@ -3,6 +3,7 @@
 #include "webserv.hpp"
 #include "Request.hpp"
 
+//class for a single response instance, contains http response data
 class Response
 {
 private:

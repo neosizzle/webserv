@@ -16,12 +16,15 @@ class Config
 		std::vector<ServerConfig>			_servers;
 		Logger								_logger;
 
-		void				_tokenize();
+		int					_tokenize();
 		int					_parse();
 		bool				_is_valid_directive(std::string str);
 	public:
 		Config();
 		Config(std::string cfg_filename);
 		~Config();
+
+		//getters
+		std::vector<ServerConfig>	get_servers();
 };
 #endif  //!__CONFIG__H__

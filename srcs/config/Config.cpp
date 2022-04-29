@@ -23,6 +23,9 @@ Config::Config(std::string cfg_filename = "/home/nszl/42cursus/webserv/config/sa
 
 Config::~Config(){}
 
+//getters
+std::vector<ServerConfig>	Config::get_servers(){return this->_servers;}
+
 /**
  * @brief Tokenizer
  * 
@@ -37,7 +40,7 @@ Config::~Config(){}
  * 		4. check for braces and semicolon
  * 		5. push validated token string to _tokens vector
  */
-void	Config::_tokenize()
+int	Config::_tokenize()
 {
 	std::ifstream		cfgfile(this->_path.c_str());
 	int					line_idx;
@@ -49,7 +52,10 @@ void	Config::_tokenize()
 	std::string			err_msg;
 
 	if (!cfgfile.is_open())
-		throw std::runtime_error("failed to open conf file");
+	{
+		this->_logger.log(ERROR, "Failed to open conf file");
+		return 1;
+	}
 	line_idx = 0;
 	while (std::getline(cfgfile, line))
 	{
@@ -68,15 +74,15 @@ void	Config::_tokenize()
 			{
 				if (brackets.empty())
 				{
-					err_msg = "Extra '}' at line " + ITOA(line_idx);
-					throw std::runtime_error(err_msg);
+					this->_logger.log(ERROR, "Extra '}' at line " + ITOA(line_idx));
+					return 1;
 				}
 				brackets.pop();
 			}
 			if (isValidDirective(token_str) && line[line.find_last_not_of(" \t", line.length())] != ';')
 			{
-				err_msg =  "Missing ';' at line  " + ITOA(line_idx);
-				throw std::runtime_error(err_msg);
+				this->_logger.log(ERROR,  "Missing ';' at line  " + ITOA(line_idx));
+				return 1;
 			}
 			if (token_str.find(";", token_str.length() - 1) != std::string::npos)
 			{
@@ -91,7 +97,11 @@ void	Config::_tokenize()
 		++line_idx;
 	}
 	if (!brackets.empty())
-		throw std::runtime_error("Unclosed or extra '{' ");
+	{
+		this->_logger.log(ERROR, "Unclosed or extra '{' ");
+		return 1;
+	}
+	return 0;
 }
 
 //parsing
@@ -101,7 +111,8 @@ int	Config::_parse()
 	int									servers_found;
 	std::vector<std::string>::iterator	it_begin;
 
-	this->_tokenize();
+	if (this->_tokenize())
+		return 1;
 	it = this->_tokens.begin();
 	servers_found = 0;
 	while (it != this->_tokens.end())
@@ -116,6 +127,7 @@ int	Config::_parse()
 				return 1;
 
 			//add servcfg to vect
+			this->_servers.push_back(srv_cfg);
 
 			servers_found++;
 		}

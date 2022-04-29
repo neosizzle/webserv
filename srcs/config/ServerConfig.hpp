@@ -57,8 +57,7 @@ class ServerConfig
 		int		_parse_cgi_bin(std::vector<std::string>::iterator &iter);//parse cgi bin path
 		int		_parse_cgi(std::vector<std::string>::iterator &iter);//parse cgi info
 		int		_parse_redirect(std::vector<std::string>::iterator &iter);
-		int		_process_locations(std::vector<std::string>::iterator &iter, std::vector<ServerConfig> &locations);//parse location block
-		void	_log();
+		int		_process_locations(std::vector<std::string>::iterator &iter, std::vector<ServerConfig> &locations);//parse location block		
 
 		friend class LocationConfig;
 		
@@ -85,6 +84,7 @@ class ServerConfig
 		void	set_locations(std::vector<ServerConfig> locations);
 
 		int		server(std::vector<std::string>::iterator start, std::vector<std::string>::iterator end);
+		void	_log();
 };
 
 #endif  //!__SERVERCONFIG__H__

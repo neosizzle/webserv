@@ -54,8 +54,6 @@ int	ServerConfig::_parse()
 		else
 			this->_logger.log(WARNING, "Invalid directive " + *iter + " at 'server'");
 	}
-	this->_log();
-
 	return 0;
 }
 
@@ -74,7 +72,6 @@ int		ServerConfig::_parse_server_names(std::vector<std::string>::iterator &iter)
 int	ServerConfig::_process_locations(std::vector<std::string>::iterator &iter, std::vector<ServerConfig> &locations)
 {
 	this->_location_url = *iter;
-	this->_logger.log(DEBUG, this->_location_url);
 	
 	if (*(++iter) != "{")
 	{
@@ -117,11 +114,17 @@ int		ServerConfig::_parse_listen(std::vector<std::string>::iterator &iter)
 		std::string port_str = listen_str.substr(listen_str.find(':') + 1);
 
 		if (port_str.find_first_not_of("0123456789") != std::string::npos)
-			throw std::runtime_error("invalid port :" + port_str);
+		{
+			this->_logger.log(ERROR, "Invlid port " + port_str);
+			return 1;
+		}
 
 		port = std::atoi(port_str.c_str());
 		if (port > 65535)
-			throw std::runtime_error("Port too big");
+		{
+			this->_logger.log(ERROR, "Port too big " + port_str);
+			return 1;
+		}
 	}
 	else if (listen_str.find_first_not_of("0123456789") != std::string::npos) {
 		ip = listen_str;

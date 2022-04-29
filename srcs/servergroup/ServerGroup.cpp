@@ -35,6 +35,48 @@ ServerGroup &ServerGroup::operator=(const ServerGroup &other)
 	return *this;
 }
 
+void	ServerGroup::configure(Config cfg)
+{
+	std::vector<ServerConfig>	server_cfgs;
+	std::vector<Listen>			existing_listens;
+	std::vector<Listen>			lists;
+
+	//set this cfg
+	this->_cfg = cfg;
+
+	//get all server blocks
+	server_cfgs = cfg.get_servers();
+
+	//set up listens and do default server selection
+	//in the case of collision
+	for (std::vector<ServerConfig>::iterator servs_iter = server_cfgs.begin();
+	servs_iter != server_cfgs.end();
+	servs_iter++)
+	{
+		lists = servs_iter->get_listens();
+		if (lists.empty())
+			lists.push_back(Listen("0.0.0.0", 8080));
+		for (std::vector<Listen>::iterator listen_iter = lists.begin();
+		listen_iter != lists.end();
+		listen_iter++)
+		{
+			if (listen_iter->ip.size() == 0) listen_iter->ip = "0.0.0.0";
+			if (listen_iter->port == 0) listen_iter->port = 8080;
+			if (std::find(existing_listens.begin(), existing_listens.end(), *listen_iter) == existing_listens.end())
+				existing_listens.push_back(*listen_iter);
+		}
+	}
+	
+	//set this->listens
+	this->_listens = existing_listens;
+	for (std::vector<Listen>::iterator listen_iter = existing_listens.begin();
+	listen_iter != existing_listens.end();
+	listen_iter++)
+	{
+		this->_logger.log(DEBUG, listen_iter->ip + ":" + ITOA(listen_iter->port));
+	}
+}
+
 /**
  * @brief Setup all servers for each port in ports parameter
  * 

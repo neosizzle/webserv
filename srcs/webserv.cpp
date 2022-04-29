@@ -2,18 +2,26 @@
 #include "Server.hpp"
 #include "ServerGroup.hpp"
 #include "Config.hpp"
+#include "Logger.hpp"
 int main(int argc, char const *argv[])
 {
+	std::string	cfg_filename;
+	Logger		logger;
+	ServerGroup	group;
+
 	if (argc == 1)
+		cfg_filename = DEFAULT_CONF;
+	else if (argc == 2)
+		cfg_filename = argv[1];
+	else
 	{
-		std::cout << "no config provided, using default config...\n";
-		Config conf(DEFAULT_CONF);
+		logger.log(WARNING, "Usage : ./webserv [cfg file]");
+		return 1;
 	}
-	if (argc == 2)
-	{
-		std::cout << "using " << argv[1] << "\n";
-		Config conf(argv[1]);
-	}
+
+	Config conf(cfg_filename.c_str());
+	logger.log(INFO, "loaded config " + cfg_filename);
+	group.configure(conf);
 	// std::vector<int> ports;
 	// ServerGroup group;
 

@@ -15,6 +15,8 @@ struct Listen
 };
 
 inline bool operator==(const Listen &lhs, const Listen &rhs){return lhs.ip == rhs.ip && lhs.port == rhs.port;}
+inline bool operator>(const Listen &lhs, const Listen &rhs){return lhs.port > rhs.port;}
+inline bool operator<(const Listen &lhs, const Listen &rhs){return lhs.port < rhs.port;}
 
 //server config class, will contain data for server block
 class ServerConfig

@@ -4,6 +4,7 @@ bool	ServerGroup::is_running = true;
 
 void	sig_handler(int signum)
 {
+	(void) signum;
 	std::cout << "\n";
 	ServerGroup::is_running = false;
 }
@@ -37,9 +38,9 @@ ServerGroup &ServerGroup::operator=(const ServerGroup &other)
 
 void	ServerGroup::configure(Config cfg)
 {
-	std::vector<ServerConfig>	server_cfgs;
-	std::vector<Listen>			existing_listens;
-	std::vector<Listen>			lists;
+	std::vector<ServerConfig>		server_cfgs;
+	std::map<Listen, ServerConfig>	existing_listens;
+	std::vector<Listen>				lists;
 
 	//set this cfg
 	this->_cfg = cfg;
@@ -62,19 +63,24 @@ void	ServerGroup::configure(Config cfg)
 		{
 			if (listen_iter->ip.size() == 0) listen_iter->ip = "0.0.0.0";
 			if (listen_iter->port == 0) listen_iter->port = 8080;
-			if (std::find(existing_listens.begin(), existing_listens.end(), *listen_iter) == existing_listens.end())
-				existing_listens.push_back(*listen_iter);
+			if (existing_listens.find(*listen_iter) == existing_listens.end())
+				existing_listens.insert(std::make_pair(*listen_iter, *servs_iter));
 		}
 	}
 	
 	//set this->listens
 	this->_listens = existing_listens;
-	for (std::vector<Listen>::iterator listen_iter = existing_listens.begin();
-	listen_iter != existing_listens.end();
-	listen_iter++)
-	{
-		this->_logger.log(DEBUG, listen_iter->ip + ":" + ITOA(listen_iter->port));
-	}
+	// for (std::vector<Listen>::iterator listen_iter = existing_listens.begin();
+	// listen_iter != existing_listens.end();
+	// listen_iter++)
+	// {
+	// 	unsigned int host;
+
+	// 	host = 0;
+	// 	ft_iptuint(listen_iter->ip, host);
+	// 	this->_logger.log(DEBUG, listen_iter->ip + ":" + ITOA(listen_iter->port));
+	// 	this->_logger.log(DEBUG, "host long " + ITOA(host));
+	// }
 }
 
 /**
@@ -90,18 +96,26 @@ void	ServerGroup::configure(Config cfg)
  * 3. Check for error (no ports provided or no server is set up)
  * @param ports A vector of ports that you want the server to listen to
  */
-void	ServerGroup::setup(std::vector <int> ports)
+void	ServerGroup::setup()
 {
-	std::vector<int>::iterator iter;
-	long	serv_fd;
+	std::map<Listen, ServerConfig>::iterator	iter;
+	long							serv_fd;
+	unsigned int					host;
 
-	iter = ports.begin();
+	iter = this->_listens.begin();
 	FD_ZERO(&_fd_set);
-	while (iter != ports.end())
+	while (iter != this->_listens.end())
 	{
-		Server	serv(INADDR_ANY, *iter);
+		host = 0;
+		if (ft_iptuint(iter->first.ip, host))
+		{
+			this->_logger.log(ERROR, "Invalid hostname provided " + iter->first.ip);
+			return ;
+		}
+		Server	serv(host, iter->first.port);
 
 		serv_fd = serv.get_server_fd();
+		serv.set_serverconfig(iter->second);
 		if (serv_fd > this->_max_fd)
 			this->_max_fd = serv_fd;
 		FD_SET(serv_fd, &_fd_set);

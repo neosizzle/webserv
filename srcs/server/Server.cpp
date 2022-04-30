@@ -79,6 +79,7 @@ Server &Server::operator=(const Server &other)
 	this->_port = other._port;
 	this->_requests = other._requests;
 	this->_responses = other._responses;
+	this->_serv_cfg = other._serv_cfg;
 	return *this;
 }
 
@@ -101,6 +102,20 @@ struct sockaddr_in Server::get_server_address()
 {
 	return this->_server_address;
 }
+
+/**
+ * @brief Returns server config for current server
+ * 
+ * @return ServerConfig 
+ */
+ServerConfig Server::get_serverconfig(){return this->_serv_cfg;}
+
+/**
+ * @brief Sets server config
+ * 
+ * @param conf 
+ */
+void	Server::set_serverconfig(ServerConfig conf){this->_serv_cfg = conf;}
 
 /**
  * @brief Closes listening socket

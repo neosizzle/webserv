@@ -129,6 +129,36 @@ int	ft_readfile(std::string path, std::string &res)
 	return 0;
 }
 
+int	ft_iptuint(std::string hostname, unsigned int &res)
+{
+	std::vector<std::string>	bytes_str;
+	unsigned int				curr_byte;
+	int							shift;
+
+	shift = 24;
+	bytes_str = ft_split(hostname, ".");
+	if (bytes_str.size() != 4)
+		return -1;
+	for (int i = 0; i < 4; i++)
+	{
+		curr_byte = std::atoi(bytes_str[i].c_str());
+		if (curr_byte < 256)
+			res += (curr_byte << shift);
+		else
+			return 1;
+		shift -= 8;
+	}
+	return 0;
+}
+
+/**
+ * @brief Reimplementation of std::find to accept non const values
+ * 
+ * @param first 
+ * @param last 
+ * @param value 
+ * @return std::vector<int>::iterator 
+ */
 std::vector<int>::iterator ft_find( std::vector<int>::iterator first, std::vector<int>::iterator last, int & value )
 {
 	while (first != last)
@@ -161,6 +191,12 @@ void	trimWhiteSpace(std::string &line)
 	}
 }
 
+/**
+ * @brief Move to next matching }
+ * 
+ * @param iter 
+ * @param tokens 
+ */
 void	moveToBraces(std::vector<std::string>::iterator &iter, std::vector<std::string> tokens)
 {
 	std::stack<bool>					braces;

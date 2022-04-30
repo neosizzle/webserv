@@ -22,6 +22,7 @@ int main(int argc, char const *argv[])
 	Config conf(cfg_filename.c_str());
 	logger.log(INFO, "loaded config " + cfg_filename);
 	group.configure(conf);
+	group.setup();
 	// std::vector<int> ports;
 	// ServerGroup group;
 

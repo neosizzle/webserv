@@ -16,7 +16,8 @@ class ServerGroup
 		fd_set						_fd_set; 		//fd set for reading watched by select() 
 		long						_max_fd;		//maximum fd to be used by select first param
 		Config						_cfg;			//parsed config object
-		std::vector<Listen>			_listens;		//listen objects to listen of port and host
+		//std::vector<Listen>			_listens;		//listen objects to listen of port and host
+		std::map<Listen, ServerConfig>	_listens;
 		Logger						_logger;
 
 	public:
@@ -30,7 +31,7 @@ class ServerGroup
 
 		//config
 		void	configure(Config cfg); //start parsing config
-		void	setup(std::vector<int> ports); //set up servers
+		void	setup(); //set up servers
 		void	run();//run servers (start to handle connections)
 		void	clean();
 };

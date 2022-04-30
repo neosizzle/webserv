@@ -8,8 +8,8 @@ std::string							ft_ltip(long ip);
 std::string							ft_gnl(std::string &str, size_t &start);
 int									ft_endswith(std::string str, std::string needle);
 int									ft_readfile(std::string path, std::string &res);
-
-std::vector<int>::iterator ft_find( std::vector<int>::iterator first, std::vector<int>::iterator last, int & value );
+int									ft_iptuint(std::string hostname, unsigned int &res);
+std::vector<int>::iterator 			ft_find( std::vector<int>::iterator first, std::vector<int>::iterator last, int & value );
 
 //parse utils
 void								trimWhiteSpace(std::string &line);

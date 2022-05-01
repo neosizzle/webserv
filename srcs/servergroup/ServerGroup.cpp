@@ -2,6 +2,13 @@
 
 bool	ServerGroup::is_running = true;
 
+/**
+ * @brief Sigal handler to handle sigints sigstops on webserv 
+ * 
+ * 1. Set is_running status to stop
+ * 
+ * @param signum 
+ */
 void	sig_handler(int signum)
 {
 	(void) signum;
@@ -36,6 +43,19 @@ ServerGroup &ServerGroup::operator=(const ServerGroup &other)
 	return *this;
 }
 
+/**
+ * @brief Configures server group, set member vars based on config
+ * 
+ * 1. Get config
+ * 2. Get server configs
+ * 3. Iterate through server configs
+ * 	1. Get listens of server config
+ * 	2. Append default ip or port if does not exist on current listen
+ * 	3. Ignore listen object if there is already an existing duplicate listen object created
+ * 	4. Add listen object into existing listen objects
+ * 
+ * @param cfg 
+ */
 void	ServerGroup::configure(Config cfg)
 {
 	std::vector<ServerConfig>		server_cfgs;

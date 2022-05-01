@@ -129,6 +129,13 @@ int	ft_readfile(std::string path, std::string &res)
 	return 0;
 }
 
+/**
+ * @brief Converts hostname in ip form to unsigned int form
+ * 
+ * @param hostname 
+ * @param res 
+ * @return int 
+ */
 int	ft_iptuint(std::string hostname, unsigned int &res)
 {
 	std::vector<std::string>	bytes_str;

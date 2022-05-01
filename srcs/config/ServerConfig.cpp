@@ -34,7 +34,15 @@ ServerConfig & ServerConfig::operator=(const ServerConfig &other)
 	return *this;
 }
 
-//parse tokens to get info
+/**
+ * @brief Parses server block configuration 
+ * 
+ * 1. Trims outer braces and server keyword
+ * 2. Start iterating through the server block tokens
+ * 	1.Check for valid directive and execute directive operations
+ * 
+ * @return int 
+ */
 int	ServerConfig::_parse()
 {
 	std::vector<std::string>::iterator	iter;
@@ -52,12 +60,20 @@ int	ServerConfig::_parse()
 				return 1;
 		}
 		else
+		{
 			this->_logger.log(WARNING, "Invalid directive " + *iter + " at 'server'");
+			return 1;
+		}
 	}
 	return 0;
 }
 
-//parse server names
+/**
+ * @brief Processes server name directive
+ * 
+ * @param iter 
+ * @return int 
+ */
 int		ServerConfig::_parse_server_names(std::vector<std::string>::iterator &iter)
 {
 	while (*iter != ";")
@@ -68,7 +84,18 @@ int		ServerConfig::_parse_server_names(std::vector<std::string>::iterator &iter)
 	return 0;
 }
 
-//process info / parse location block
+/**
+ * @brief Process location block directive
+ * 
+ * 1. Check for starting brace
+ * 2. Iterate through tokens until reach ending brace
+ * 	1. Check and execute directive process
+ * 	2. Push location object to location vector
+ * 
+ * @param iter 
+ * @param locations 
+ * @return int 
+ */
 int	ServerConfig::_process_locations(std::vector<std::string>::iterator &iter, std::vector<ServerConfig> &locations)
 {
 	this->_location_url = *iter;
@@ -83,13 +110,20 @@ int	ServerConfig::_process_locations(std::vector<std::string>::iterator &iter, s
 		if (this->_directive_operations[*iter])
 			(this->*(ServerConfig::_directive_operations[*iter]))(++iter);
 		else
+		{
 			this->_logger.log(WARNING, "Invalid directive " + *iter + " at 'location'");
-		// this->_logger.log(DEBUG, *iter);
+			return 1;
+		}
 	}
 	locations.push_back(*this);
 }
 
-//parse location info
+/**
+ * @brief Parse location block directive
+ * 
+ * @param iter 
+ * @return int 
+ */
 int		ServerConfig::_parse_location(std::vector<std::string>::iterator &iter)
 {
 	ServerConfig	location;
@@ -99,7 +133,19 @@ int		ServerConfig::_parse_location(std::vector<std::string>::iterator &iter)
 	return 0;
 }
 
-//parse listen
+/**
+ * @brief Process listen directive
+ * 
+ * 1. Check for hostname:port combination
+ * 2. Extract port string based on colon location
+ * 3. return 1 if port contains invalid numbers
+ * 4. return 1 if port exceeds maximum allowed value
+ * 5. Extract hostname and check for multiple ports
+ * 6. Create listen object and check for duplicate listen values
+ * 
+ * @param iter 
+ * @return int 
+ */
 int		ServerConfig::_parse_listen(std::vector<std::string>::iterator &iter)
 {
 	int			port;
@@ -160,7 +206,15 @@ int		ServerConfig::_parse_listen(std::vector<std::string>::iterator &iter)
 	return 0;
 }
 
-//parse client max body
+/**
+ * @brief Process client max body directive
+ * 
+ * 1. Check for non digits
+ * 2. Check for multiple inputs
+ * 
+ * @param iter 
+ * @return int 
+ */
 int		ServerConfig::_parse_max_body(std::vector<std::string>::iterator &iter)
 {
 	long		max_size;
@@ -181,7 +235,16 @@ int		ServerConfig::_parse_max_body(std::vector<std::string>::iterator &iter)
 	return 0;
 }
 
-//parse error pages
+/**
+ * @brief Process error page directive
+ * 
+ * 1. Check for invalid non-numeric error codes
+ * 2. Check for multiple error pages
+ * 3. Extract code and error page and add to map
+ * 
+ * @param iter 
+ * @return int 
+ */
 int		ServerConfig::_parse_error_page(std::vector<std::string>::iterator &iter)
 {
 	std::vector<int>	codes;
@@ -216,7 +279,14 @@ int		ServerConfig::_parse_root_path(std::vector<std::string>::iterator &iter)
 	return 0;
 }
 
-//parse indexes
+/**
+ * @brief Process index files directive
+ * 
+ * 1. Push indexes as tokens until semicolon is met
+ * 
+ * @param iter 
+ * @return int 
+ */
 int		ServerConfig::_parse_index(std::vector<std::string>::iterator &iter)
 {
 	this->_index_files.clear();
@@ -228,8 +298,14 @@ int		ServerConfig::_parse_index(std::vector<std::string>::iterator &iter)
 	
 	return 0;
 }
-
-//parse allowed methods / limit except
+ /**
+  * @brief Process limit except directive
+  * 
+  * 1. Push limit_except option until semicolon is met
+  * 
+  * @param iter 
+  * @return int 
+  */
 int		ServerConfig::_parse_limit_except(std::vector<std::string>::iterator &iter)
 {
 	this->_methods.clear();
@@ -242,7 +318,15 @@ int		ServerConfig::_parse_limit_except(std::vector<std::string>::iterator &iter)
 	return 0;
 }
 
-//parse autoindex
+/**
+ * @brief Process autoindex directive
+ * 
+ * 1. Check for invalid autoidx values (on or off only)
+ * 2. Check for multiple autoindexes
+ * 
+ * @param iter 
+ * @return int 
+ */
 int		ServerConfig::_parse_autoindex(std::vector<std::string>::iterator &iter)
 {
 	std::string	autoidx_str;
@@ -265,7 +349,12 @@ int		ServerConfig::_parse_autoindex(std::vector<std::string>::iterator &iter)
 	return 0;
 }
 
-//parse uploads
+/**
+ * @brief Process upload directive 
+ * 
+ * @param iter 
+ * @return int 
+ */
 int		ServerConfig::_parse_upload(std::vector<std::string>::iterator &iter)
 {
 	this->_upload_path = *iter;
@@ -277,7 +366,12 @@ int		ServerConfig::_parse_upload(std::vector<std::string>::iterator &iter)
 	return 0;
 }
 
-//parse cgi binary
+/**
+ * @brief Process cgi bin directive and checks for duplicates
+ * 
+ * @param iter 
+ * @return int 
+ */
 int		ServerConfig::_parse_cgi_bin(std::vector<std::string>::iterator &iter)
 {
 	this->_cgi_bin_path = *iter;
@@ -289,7 +383,12 @@ int		ServerConfig::_parse_cgi_bin(std::vector<std::string>::iterator &iter)
 	return 0;
 }
 
-//parse cgi
+/**
+ * @brief Processes cgi path directive
+ * 
+ * @param iter 
+ * @return int 
+ */
 int		ServerConfig::_parse_cgi(std::vector<std::string>::iterator &iter)
 {
 	std::string	extension;
@@ -306,6 +405,12 @@ int		ServerConfig::_parse_cgi(std::vector<std::string>::iterator &iter)
 	return 0;
 }
 
+/**
+ * @brief processes redirection directive
+ * 
+ * @param iter 
+ * @return int 
+ */
 int		ServerConfig::_parse_redirect(std::vector<std::string>::iterator &iter)
 {
 	std::string	status_str;
@@ -412,7 +517,10 @@ void	ServerConfig::_log()
 
 }
 
-//initialize directive operations
+/**
+ * @brief Initialize directive operations
+ * 
+ */
 void	ServerConfig::_init_dir_operations()
 {
 	this->_directive_operations["location"] = &ServerConfig::_parse_location;
@@ -430,7 +538,10 @@ void	ServerConfig::_init_dir_operations()
 	this->_directive_operations["return"] = &ServerConfig::_parse_redirect;
 }
 
-//initialize default values
+/**
+ * @brief Initialize default values
+ * 
+ */
 void	ServerConfig::_init_default_values()
 {
 	std::vector<std::string>			init_serv_names;

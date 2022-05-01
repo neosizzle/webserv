@@ -104,7 +104,18 @@ int	Config::_tokenize()
 	return 0;
 }
 
-//parsing
+/**
+ * @brief Tokenizes config file and parses token to extract data
+ * 
+ * 1. Will call tokenize(), if it fails, return 1
+ * 2. Start iteration through the tokens obtained by tokenize()
+ * 	1. If current token is 'server' (server block), create server object and move
+ * 		Pointer to the next matchging brace
+ * 	2. Begin to parse server config, returns 1 on failure
+ *  3. Push configured server to _servers
+ * 
+ * @return int 0 if Ok, non zero if error 
+ */
 int	Config::_parse()
 {
 	std::vector<std::string>::iterator 	it;

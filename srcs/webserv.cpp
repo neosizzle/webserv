@@ -29,6 +29,6 @@ int main(int argc, char const *argv[])
 	// ports.push_back(8080);
 	// ports.push_back(8081);
 	// group.setup(ports);
-	// group.run();
+	group.run();
 	// return 0;
 }

@@ -41,6 +41,7 @@
 #include <sys/types.h>
 #include <dirent.h>
 #include <csignal>
+#include <regex.h>
 
 //containers
 #include <vector>

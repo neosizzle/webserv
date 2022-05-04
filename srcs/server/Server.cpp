@@ -271,8 +271,9 @@ void	Server::close(long socket)
  */
 void	Server::process(long socket)
 {
-	std::string	raw_req;
-	Response	response;
+	std::string		raw_req;
+	Response		response;
+	ServerConfig	*location;
 
 	raw_req = this->_requests[socket];
 
@@ -280,12 +281,20 @@ void	Server::process(long socket)
 	if (raw_req.find("Transfer-Encoding: chunked") != std::string::npos ||
 		raw_req.find("Transfer-Encoding: chunked") < raw_req.find(CRLF)
 	)
-
 		this->_unchunk_chunks(socket);
 
 	//no chunk, proceeed as normal
 	Request request(raw_req);
 	
+	//obtain location config
+	location = this->_serv_cfg.match_location(request.get_route());
+	if (!location)
+		this->_logger.log(DEBUG, "no location");
+	else
+	{
+		this->_logger.log(DEBUG, "location found, " + location->get_location_url());
+	}
+
 	//generate response
 	response.call(request);
 

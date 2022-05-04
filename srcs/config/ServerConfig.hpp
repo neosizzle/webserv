@@ -5,6 +5,14 @@
 #include "LocationConfig.hpp"
 #include "Logger.hpp"
 
+enum LocationModifier {
+	NONE,
+	EXACT,
+	CASE_SENS,
+	CASE_INSENS,
+	LONGEST
+};
+
 struct Listen
 {
 	std::string	ip;
@@ -40,8 +48,9 @@ class ServerConfig
 		std::string							_upload_path;
 		std::vector<ServerConfig> 			_locations;
 		std::string							_location_url;
+		LocationModifier					_location_modifier;
 		std::map<int, std::string>			_redirect;
-
+		
 		void	_init_default_values();//initializes default mandatory directives
 		void	_init_dir_operations();//initialize directive operations
 		int		_parse();//parse tokens into data
@@ -61,6 +70,7 @@ class ServerConfig
 		int		_parse_redirect(std::vector<std::string>::iterator &iter);
 		int		_process_locations(std::vector<std::string>::iterator &iter, std::vector<ServerConfig> &locations);//parse location block		
 
+		ServerConfig	*_match_regex(std::vector<ServerConfig *> locations, std::string path);
 		friend class LocationConfig;
 		
 	public:
@@ -77,6 +87,7 @@ class ServerConfig
 		std::map<std::string, std::string>	get_cgi_info();
 		std::vector<LocationConfig>			get_locations();
 		std::vector<Listen>					get_listens();
+		std::string							get_location_url();
 
 		//setters
 		void	set_server_name(std::vector<std::string> server_name);
@@ -85,8 +96,9 @@ class ServerConfig
 		void	set_cgi_info(std::map<std::string, std::string> cgi_info);
 		void	set_locations(std::vector<ServerConfig> locations);
 
-		int		server(std::vector<std::string>::iterator start, std::vector<std::string>::iterator end);
-		void	_log();
+		int				server(std::vector<std::string>::iterator start, std::vector<std::string>::iterator end);
+		ServerConfig	*match_location(std::string path);
+		void			_log();
 };
 
 #endif  //!__SERVERCONFIG__H__

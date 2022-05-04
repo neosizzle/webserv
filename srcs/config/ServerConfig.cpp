@@ -30,6 +30,7 @@ ServerConfig & ServerConfig::operator=(const ServerConfig &other)
 	this->_upload_path = other._upload_path;
 	this->_locations = other._locations;
 	this->_location_url = other._location_url;
+	this->_location_modifier = other._location_modifier;
 	this->_redirect = other._redirect;
 	return *this;
 }
@@ -87,8 +88,9 @@ int		ServerConfig::_parse_server_names(std::vector<std::string>::iterator &iter)
 /**
  * @brief Process location block directive
  * 
- * 1. Check for starting brace
- * 2. Iterate through tokens until reach ending brace
+ * 1. Check for location modifier and set location modifier
+ * 2. Check for starting brace
+ * 3. Iterate through tokens until reach ending brace
  * 	1. Check and execute directive process
  * 	2. Push location object to location vector
  * 
@@ -98,6 +100,20 @@ int		ServerConfig::_parse_server_names(std::vector<std::string>::iterator &iter)
  */
 int	ServerConfig::_process_locations(std::vector<std::string>::iterator &iter, std::vector<ServerConfig> &locations)
 {
+	if (*iter == "=" || *iter == "~" || *iter =="~*" || *iter == "^~")
+	{
+		if (*iter == "=")
+			this->_location_modifier = EXACT;
+		else if (*iter == "~")
+			this->_location_modifier = CASE_SENS;
+		else if (*iter == "~*")
+			this->_location_modifier = CASE_INSENS;
+		else 
+			this->_location_modifier = LONGEST;
+		iter++;
+	}
+	else
+		this->_location_modifier = NONE;
 	this->_location_url = *iter;
 	
 	if (*(++iter) != "{")
@@ -582,5 +598,80 @@ int	ServerConfig::server(std::vector<std::string>::iterator start, std::vector<s
 	return this->_parse();
 }
 
+ServerConfig *ServerConfig::match_location(std::string path)
+{
+	std::vector<ServerConfig *> locations_to_filter;
+	ServerConfig	*temp;
+	ServerConfig	*regex_match;
+
+	temp = NULL;
+
+	for (std::vector<ServerConfig>::iterator i = this->_locations.begin();
+	i != this->_locations.end();
+	i++)
+	{
+		this->_logger.log(DEBUG, "Searching " + i->_location_url);
+		//if location mod is not case sens nor case insens
+		if (i->_location_modifier != 2 && i->_location_modifier != 3)
+		{
+			//exact match
+			if (i->_location_modifier == 1 && i->_location_url == path)
+				return &(*i);
+
+			//longest match
+			else if (path.find(i->_location_url) == 0)
+			{
+				if (temp && temp->_location_url.length() < i->_location_url.length())
+					temp = &(*i);
+				else if (!temp)
+					temp = &(*i);
+			}
+		}
+		else
+			locations_to_filter.push_back(&(*i));
+	}
+
+	//if location is not null and we are delaing with longest mtch
+	if (temp && temp->_location_modifier == 4)
+		return temp;
+
+	//start to match regex
+	regex_match = this->_match_regex(locations_to_filter, path);
+
+	if (regex_match)
+		return regex_match;
+	return temp;
+}
+
+ServerConfig	*ServerConfig::_match_regex(std::vector<ServerConfig *> locations, std::string path)
+{
+	regex_t	reg;
+	int		flag;
+	int		err;
+	int		match;
+	
+	for (std::vector<ServerConfig *>::iterator i = locations.begin(); i != locations.end(); i++)
+	{
+		flag = REG_NOSUB;
+
+		if ((*i)->_location_modifier == 3)
+			flag |= REG_ICASE;
+		err = regcomp(&reg, (*i)->_location_url.c_str(), flag);
+		if (err)
+		{
+			this->_logger.log(ERROR, "Regex comp failed ");
+			return NULL;
+		}
+		match = regexec(&reg, path.c_str(), 0, NULL, 0);
+		if (!match)
+			return *i;
+		else
+			return NULL;
+	}
+	return NULL;
+}
+
 //getters
 std::vector<Listen> ServerConfig::get_listens(){return this->_listens;}
+
+std::string ServerConfig::get_location_url(){return this->_location_url;}

@@ -610,7 +610,6 @@ ServerConfig *ServerConfig::match_location(std::string path)
 	i != this->_locations.end();
 	i++)
 	{
-		this->_logger.log(DEBUG, "Searching " + i->_location_url);
 		//if location mod is not case sens nor case insens
 		if (i->_location_modifier != 2 && i->_location_modifier != 3)
 		{
@@ -663,6 +662,7 @@ ServerConfig	*ServerConfig::_match_regex(std::vector<ServerConfig *> locations, 
 			return NULL;
 		}
 		match = regexec(&reg, path.c_str(), 0, NULL, 0);
+		regfree(&reg);
 		if (!match)
 			return *i;
 		else

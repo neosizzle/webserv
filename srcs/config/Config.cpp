@@ -6,7 +6,11 @@ Config::Config()
 	this->_path = DEFAULT_CONF;
 
 	//start parsing raw
-	this->_parse();
+	if (this->_parse() != 0)
+	{
+		this->_logger.log(ERROR, "Parse error, exiting...");
+		exit(1);
+	}
 }
 
 Config::Config(std::string cfg_filename = "/home/nszl/42cursus/webserv/config/sample.conf")

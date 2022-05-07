@@ -131,6 +131,7 @@ int	ServerConfig::_process_locations(std::vector<std::string>::iterator &iter, s
 			return 1;
 		}
 	}
+	this->_locations.clear();
 	locations.push_back(*this);
 }
 
@@ -327,10 +328,14 @@ int		ServerConfig::_parse_limit_except(std::vector<std::string>::iterator &iter)
 	this->_methods.clear();
 	while (*iter != ";")
 	{
+		if (*iter != "GET" && *iter != "PUT" && *iter != "POST" && *iter != "DELETE")
+		{
+			this->_logger.log(ERROR, "Invalid Method " + *iter);
+			return 1;
+		}
 		this->_methods.push_back(*iter);
 		++iter;
 	}
-	
 	return 0;
 }
 

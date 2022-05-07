@@ -286,14 +286,17 @@ void	Server::process(long socket)
 	//no chunk, proceeed as normal
 	Request request(raw_req);
 	
-	//obtain location config
+	//obtain location block config
 	location = this->_serv_cfg.match_location(request.get_route());
 	if (!location)
 		this->_logger.log(DEBUG, "no location");
 	else
 	{
 		this->_logger.log(DEBUG, "location found, " + location->get_location_url());
+		location->_log();
 	}
+
+	//generate httpconfig used by respone with serverconfig and location cfg
 
 	//generate response
 	response.call(request);

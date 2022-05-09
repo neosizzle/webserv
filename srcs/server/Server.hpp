@@ -5,6 +5,7 @@
 #include "Response.hpp"
 #include "Logger.hpp"
 #include "ServerConfig.hpp"
+#include "HttpConfig.hpp"
 
 //class for a single server instance
 class Server

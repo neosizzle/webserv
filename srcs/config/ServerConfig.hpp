@@ -88,6 +88,11 @@ class ServerConfig
 		std::vector<LocationConfig>			get_locations();
 		std::vector<Listen>					get_listens();
 		std::string							get_location_url();
+		std::string							get_root();
+		std::vector<std::string>			get_methods();
+		bool								get_autoindex();
+		std::vector<std::string>			get_indexes();
+		std::string							get_upload_path();
 
 		//setters
 		void	set_server_name(std::vector<std::string> server_name);

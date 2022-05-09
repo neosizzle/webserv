@@ -132,6 +132,7 @@ int	ServerConfig::_process_locations(std::vector<std::string>::iterator &iter, s
 		}
 	}
 	locations.push_back(*this);
+	return 0;
 }
 
 /**
@@ -675,3 +676,17 @@ ServerConfig	*ServerConfig::_match_regex(std::vector<ServerConfig *> locations, 
 std::vector<Listen> ServerConfig::get_listens(){return this->_listens;}
 
 std::string ServerConfig::get_location_url(){return this->_location_url;}
+
+std::string ServerConfig::get_root(){return this->_root_path;}
+
+std::map<int, std::string> ServerConfig::get_error_pages(){return this->_error_pages;}
+
+long ServerConfig::get_max_size(){return this->_max_size;}
+
+std::vector<std::string> ServerConfig::get_methods(){return this->_methods;}
+
+bool	ServerConfig::get_autoindex(){return this->_autoindex;}
+
+std::vector<std::string>	ServerConfig::get_indexes(){return this->_index_files;}
+
+std::string	ServerConfig::get_upload_path(){return this->_upload_path;}

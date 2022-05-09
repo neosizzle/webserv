@@ -2,6 +2,8 @@
 #define __REPONSE__H__
 #include "webserv.hpp"
 #include "Request.hpp"
+#include "HttpConfig.hpp"
+#include "Logger.hpp"
 
 //class for a single response instance, contains http response data
 class Response
@@ -12,7 +14,8 @@ private:
 	Request								_req;		//bound request
 	std::string							_body;		//response body
 	std::map<std::string, std::string>	_headers;	//response headers
-	//Config							_config	;	//config for processing request and generating response 
+	HttpConfig							_config	;	//config for processing request and generating response 
+	Logger								_logger;
 	//config variables go here.....
 
 	void								_process_get(Request request); //config as param
@@ -56,7 +59,7 @@ public:
 	std::string							get_body();
 	std::map<std::string, std::string>	get_headers();
 
-	void								call(Request request); //config as param
+	void								call(Request request, HttpConfig requestConfig); //config as param
 
 };
 #endif  //!__REPONSE__H__

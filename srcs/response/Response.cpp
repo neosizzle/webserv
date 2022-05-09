@@ -16,7 +16,7 @@ Response	&Response::operator=(const Response &other)
 	this->_req = other._req;
 	this->_body = other._body;
 	this->_headers = other._headers;
-	//this->_config = other._config;
+	this->_config = other._config;
 	return *this;
 }
 
@@ -168,8 +168,10 @@ void	Response::_process_delete(Request request)
 }
 
 //generate response to populate raw response string
-void	Response::call(Request	request)
+void	Response::call(Request	request, HttpConfig requestConfig)
 {
+	std::string	method;
+	std::vector<std::string>	allowed_methods;
 	char	*response = "HTTP/1.1 200 OK\n"
 	"Date: Mon, 27 Jul 2009 12:28:53 GMT\n"
 	"Server: Apache/2.2.14 (Win32)\n"
@@ -186,9 +188,29 @@ void	Response::call(Request	request)
 	"Content-Type: text/html\n"
 	"\n<h1>it post :o</h1>";
 
+	char	*response_not_allowed = "HTTP/1.1 200 OK\n"
+	"Date: Mon, 27 Jul 2009 12:28:53 GMT\n"
+	"Server: Apache/2.2.14 (Win32)\n"
+	"Last-Modified: Wed, 22 Jul 2009 19:15:56 GMT\n"
+	"Content-Length: 19\n"
+	"Content-Type: text/html\n"
+	"\n<h1>cannot  :o</h1>";
+
+	this->_config = requestConfig;
+	method = request.get_method();
+
+	allowed_methods = this->_config.get_methods();
+	
 	//resolve files
 
 	//check for allowed methods from cfg
+	if (std::find(allowed_methods.begin(), 
+		allowed_methods.end(),
+		method) == allowed_methods.end())
+	{
+		this->_raw = std::string(response_not_allowed);
+		return ;
+	}
 
 	//process requests
 	if (request.get_method() == "GET")

@@ -295,8 +295,11 @@ void	Server::process(long socket)
 		this->_logger.log(DEBUG, "location found, " + location->get_location_url());
 	}
 
+	//generate request config
+	HttpConfig	reqCfg(location, request.get_route());
+
 	//generate response
-	response.call(request);
+	response.call(request, reqCfg);
 
 	//remove prev response if any and add response to map
 	this->_responses.erase(socket);

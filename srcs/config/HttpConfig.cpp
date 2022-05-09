@@ -5,6 +5,41 @@ HttpConfig::HttpConfig(){}
 
 HttpConfig::~HttpConfig(){}
 
+HttpConfig::HttpConfig(ServerConfig *location, std::string route)
+{
+	std::string	root;
+	std::vector<std::string> methods;
+	std::vector<std::string> indexes;
+
+	root = location->get_root();
+
+	//trim location root slash
+	if (root[root.size() - 1] == '/')
+		root = root.erase(root.size() - 1);
+	this->_path = root;
+	this->_error_pages = location->get_error_pages();
+	this->_max_size = location->get_max_size();
+	this->_upload_path = location->get_upload_path();
+	//cgi stuff here..
+
+	methods = location->get_methods();
+	if (methods.size() == 0)
+		methods.push_back(std::string("GET"));
+	this->_methods = methods;
+
+	//indexes here
+	indexes = location->get_indexes();
+	if (indexes.size() == 0)
+		indexes.push_back("index.html");
+	for (std::vector<std::string>::iterator i = indexes.begin(); i != indexes.end(); i++)
+		this->_indexes.push_back(root + "/" + *i);
+	
+
+	this->_autoidx = location->get_autoindex();
+
+	this->_logger.log(DEBUG, root + route);
+}
+
 HttpConfig &HttpConfig::operator=(const HttpConfig &other)
 {
 	this->_path = other._path;
@@ -13,10 +48,14 @@ HttpConfig &HttpConfig::operator=(const HttpConfig &other)
 	this->_cgi_param = other._cgi_param;
 	this->_cgi_pass = other._cgi_pass;
 	this->_methods = other._methods;
-	this->_ip = other._ip;
-	this->_port = other._port;
 	this->_indexes = other._indexes;
 	this->_autoidx = other._autoidx;
+	this->_upload_path = other._upload_path;
 
 	return *this;
 }
+
+HttpConfig::HttpConfig(const HttpConfig &other){*this = other;}
+
+//getters
+std::vector<std::string> HttpConfig::get_methods(){return this->_methods;}

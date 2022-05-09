@@ -296,12 +296,8 @@ void	Server::process(long socket)
 		location->_log();
 	}
 
-<<<<<<< HEAD
 	//generate request config
 	HttpConfig	reqCfg(location, request.get_route());
-=======
-	//generate httpconfig used by respone with serverconfig and location cfg
->>>>>>> 42758fd1943b50351e994f89c3421712b017ea42
 
 	//generate response
 	response.call(request, reqCfg);

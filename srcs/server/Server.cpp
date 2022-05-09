@@ -291,10 +291,7 @@ void	Server::process(long socket)
 	if (!location)
 		this->_logger.log(DEBUG, "no location");
 	else
-	{
 		this->_logger.log(DEBUG, "location found, " + location->get_location_url());
-		location->_log();
-	}
 
 	//generate request config
 	HttpConfig	reqCfg(location, request.get_route());

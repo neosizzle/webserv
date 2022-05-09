@@ -11,7 +11,7 @@ class HttpConfig
 {
 	private:
 		std::string							_path;			//directory for request to search
-		std::string							_upload_path;
+		std::string							_upload_path;	//directory for file uploads
 		std::map<int, std::string>			_error_pages;	//directory of error pages for error codes
 		long								_max_size;		//body max size
 		std::map<std::string, std::string>	_cgi_param;		//cgi stuff
@@ -31,6 +31,10 @@ class HttpConfig
 
 		//ill add getters and setters as we go
 		std::vector<std::string>	get_methods();
+		std::string					get_path();
+		bool						get_autoindex();
+		std::vector<std::string>	get_indexes();
+		std::map<int, std::string>	get_error_pages();
 };
 
 #endif  //!__HTTPCONFIG__H__

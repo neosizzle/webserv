@@ -104,6 +104,30 @@ int	ft_endswith(std::string str, std::string needle)
 }
 
 /**
+ * @brief Determines if string str begins with string needle
+ * 
+ * @param str 
+ * @param needle 
+ * @return int 0 if false and 1 is true
+ */
+int	ft_beginswith(std::string str, std::string needle)
+{
+	int	i;
+	int	j;
+
+	i = 0;
+	j = 0;
+	while (j < needle.size())
+	{
+		i++;
+		j++;
+		if (i > str.size() || str[i] != needle[j])
+			return 0;
+	}
+	return 1;
+}
+
+/**
  * @brief Reads a file given the path and writes the contents to res
  * 
  * @param path file path to be read from
@@ -244,4 +268,17 @@ bool	isValidDirective(std::string str)
           str == "cgi" ||
           str == "cgi_bin" ||
 		  str == "client_max_body_size");
+}
+
+/**
+ * @brief check if file exists
+ * 
+ * @param name 
+ * @return true it does
+ * @return false it dosnt
+ */
+bool	ft_file_exist(std::string name)
+{
+	std::ifstream f(name.c_str());
+    return f.good();
 }

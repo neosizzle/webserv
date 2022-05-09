@@ -197,7 +197,18 @@ int	Response::_parse_form_data(std::string body, std::string boundary , std::map
 std::string	Response::_resolve_filepath(std::string route, std::string root)
 {
 	std::string	res;
+	std::vector<std::string>			indexes;
+	std::vector<std::string>::iterator	indexes_iter;
 
+	indexes = this->_config.get_indexes();
+	indexes_iter = indexes.begin();
+	while (indexes_iter != indexes.end())
+	{
+		this->_logger.log(DEBUG, *indexes_iter);
+		indexes_iter++;
+	}
+	if (indexes_iter == indexes.end())
+		--indexes_iter;
 	if (ft_endswith(route, "/"))
 		res = root + route + index_file;
 	else if (route.find(".") == std::string::npos)

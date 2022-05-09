@@ -67,23 +67,31 @@ void	Response::_process_get(Request request)
 	std::string	file_path;
 	std::string	file_contents;
 
-	//check route match and load config
-
 	//check autoindex
-	if (autoidx && request.get_route().find(".") == std::string::npos)
+	if (this->_config.get_autoindex() && request.get_route().find(".") == std::string::npos)
 	{
-		this->_generate_autoidx(request.get_route(), root_path);
+		this->_generate_autoidx(request.get_route(), this->_config.get_path());
 		return ;
 	}
 
 	//resolve filepath
-	file_path = Response::_resolve_filepath(request.get_route(), root_path);
-	// std::cout << file_path << "\n";
+	file_path = Response::_resolve_filepath(request.get_route(), this->_config.get_path());
+	this->_logger.log(DEBUG, "file path " + file_path);
 
 	//read file and generate response
+	//ft_readfile returns 1 if file is not found
 	if (ft_readfile(file_path, file_contents))
 	{
-		file_path = root_path + "/" + not_found_file;
+		if (this->_config.get_error_pages().count(404) == 0)
+		{
+			this->_generate_response(404, "not found");
+			return ;
+		}
+
+		if (ft_beginswith(this->_config.get_error_pages()[404], "/"))
+			file_path = root_path + this->_config.get_error_pages()[404];
+		else
+			file_path = root_path + "/" + this->_config.get_error_pages()[404];
 		ft_readfile(file_path, file_contents);
 		this->_generate_response(404, file_contents);
 		return ;
@@ -208,7 +216,7 @@ void	Response::call(Request	request, HttpConfig requestConfig)
 		allowed_methods.end(),
 		method) == allowed_methods.end())
 	{
-		this->_raw = std::string(response_not_allowed);
+		this->_generate_response(405, "Method not allowed");
 		return ;
 	}
 

@@ -36,8 +36,6 @@ HttpConfig::HttpConfig(ServerConfig *location, std::string route)
 	
 
 	this->_autoidx = location->get_autoindex();
-
-	this->_logger.log(DEBUG, root + route);
 }
 
 HttpConfig &HttpConfig::operator=(const HttpConfig &other)
@@ -59,3 +57,11 @@ HttpConfig::HttpConfig(const HttpConfig &other){*this = other;}
 
 //getters
 std::vector<std::string> HttpConfig::get_methods(){return this->_methods;}
+
+bool	HttpConfig::get_autoindex(){return this->_autoidx;}
+
+std::string	HttpConfig::get_path(){return this->_path;}
+
+std::vector<std::string>	HttpConfig::get_indexes(){return this->_indexes;}
+
+std::map<int, std::string>	HttpConfig::get_error_pages(){return this->_error_pages;}

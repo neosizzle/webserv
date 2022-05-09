@@ -42,7 +42,7 @@ public:
 	std::string	root_path = "/home/nszl/42cursus/webserv/html";
 	std::string	upload_path = "/home/nszl/42cursus/webserv/html/uploads";
 	std::string	index_file = "index.html";
-	std::string	not_found_file = "404.html";
+	std::string	not_found_file = "error_pages/404.html";
 	std::string hostname = "127.0.0.1";
 	std::string port = "8081";
 	int			autoidx = 1;

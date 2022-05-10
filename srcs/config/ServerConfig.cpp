@@ -124,7 +124,10 @@ int	ServerConfig::_process_locations(std::vector<std::string>::iterator &iter, s
 	while (*(++iter) != "}")
 	{
 		if (this->_directive_operations[*iter])
-			(this->*(ServerConfig::_directive_operations[*iter]))(++iter);
+		{
+			if ((this->*(ServerConfig::_directive_operations[*iter]))(++iter))
+				return 1;
+		}
 		else
 		{
 			this->_logger.log(WARNING, "Invalid directive " + *iter + " at 'location'");
@@ -235,7 +238,6 @@ int		ServerConfig::_parse_listen(std::vector<std::string>::iterator &iter)
  */
 int		ServerConfig::_parse_max_body(std::vector<std::string>::iterator &iter)
 {
-	long		max_size;
 	std::string	max_size_str;
 
 	max_size_str = *iter;
@@ -267,7 +269,6 @@ int		ServerConfig::_parse_error_page(std::vector<std::string>::iterator &iter)
 {
 	std::vector<int>	codes;
 	
-	this->_error_pages.clear();
 	while (iter->find_first_not_of("0123456789") == std::string::npos)
    	{
 		codes.push_back(std::atoi(iter->c_str()));
@@ -383,6 +384,11 @@ int		ServerConfig::_parse_upload(std::vector<std::string>::iterator &iter)
 	if (*(++iter) != ";")
 	{
 		this->_logger.log(ERROR, "Multiple upload path " + *iter);
+		return 1;
+	}
+	if (!ft_directory_exist(this->_root_path + "/" + this->_upload_path))
+	{
+		this->_logger.log(ERROR, "upload path not found " + this->_root_path + "/" + this->_upload_path);
 		return 1;
 	}
 	return 0;

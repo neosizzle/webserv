@@ -69,7 +69,7 @@ void Request::_parse_raw(std::string raw)
 	this->_read_req_line(raw);
 
 	//logging
-	std::cout << BOLDGREEN << "Request : " << raw.substr(0, raw.find('\n')) << RESET << "\n";
+	this->_logger.log(INFO, "Request : " + raw.substr(0, raw.find('\n')));
 
 	//extract headers
 	start_idx = 0;

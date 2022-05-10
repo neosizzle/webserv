@@ -112,8 +112,8 @@ int	ft_endswith(std::string str, std::string needle)
  */
 int	ft_beginswith(std::string str, std::string needle)
 {
-	int	i;
-	int	j;
+	size_t	i;
+	size_t	j;
 
 	i = 0;
 	j = 0;
@@ -281,4 +281,23 @@ bool	ft_file_exist(std::string name)
 {
 	std::ifstream f(name.c_str());
     return f.good();
+}
+
+/**
+ * @brief Check if directory exists
+ * 
+ * @param name 
+ * @return true 
+ * @return false 
+ */
+bool	ft_directory_exist(std::string name)
+{
+	struct stat info;
+
+	if( stat( name.c_str(), &info ) != 0 )
+		return false;
+	else if( info.st_mode & S_IFDIR )
+		return true;
+	else
+		return false;
 }

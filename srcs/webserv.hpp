@@ -42,6 +42,7 @@
 #include <dirent.h>
 #include <csignal>
 #include <regex.h>
+#include <sys/stat.h>
 
 //containers
 #include <vector>

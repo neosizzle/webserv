@@ -19,6 +19,7 @@ class HttpConfig
 		std::vector<std::string>			_methods;		//allowed methods
 		std::vector<std::string>			_indexes;		//directory for index files
 		bool								_autoidx;		//autoindex
+		bool								_no_location;	//no location
 		Logger								_logger;
 	public:
 		//constructors
@@ -35,6 +36,8 @@ class HttpConfig
 		bool						get_autoindex();
 		std::vector<std::string>	get_indexes();
 		std::map<int, std::string>	get_error_pages();
+		std::string					get_upload_path();
+		long						get_max_size();
 };
 
 #endif  //!__HTTPCONFIG__H__

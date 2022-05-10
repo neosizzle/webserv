@@ -2,7 +2,7 @@
 #define __REQUEST__H__
 #include "webserv.hpp"
 #include "utils.hpp"
-
+#include "Logger.hpp"
 //class for a single request instance, contains http response data
 class Request
 {
@@ -13,6 +13,7 @@ private:
 	std::map<std::string, std::string>	_headers;	//misc headers
 	std::string							_body;		//request body if any
 	std::string							_raw;		//raw request buffer
+	Logger								_logger;
 
 	void								_parse_raw(std::string raw); //parses raw request to request class
 	void								_read_req_line(std::string raw); //reads the first line of http request (request line)

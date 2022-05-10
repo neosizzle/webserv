@@ -3,17 +3,18 @@
 
 Config::Config()
 {
-	this->_path = DEFAULT_CONF;
+	// this->_path = DEFAULT_CONF;
 
-	//start parsing raw
-	if (this->_parse() != 0)
-	{
-		this->_logger.log(ERROR, "Parse error, exiting...");
-		exit(1);
-	}
+	// //start parsing raw
+	// this->_logger.log(DEBUG, "AMBATA PARSE default");
+	// if (this->_parse() != 0)
+	// {
+	// 	this->_logger.log(ERROR, "Parse error, exiting...");
+	// 	exit(1);
+	// }
 }
 
-Config::Config(std::string cfg_filename = "/home/nszl/42cursus/webserv/config/sample.conf")
+Config::Config(std::string cfg_filename = DEFAULT_CONF)
 {
 	this->_path = cfg_filename;
 	
@@ -66,7 +67,7 @@ int	Config::_tokenize()
 		this->_raw += (line + "\n");
 		last = 0;
 		first = line.find_first_not_of(" \t", last);
-		while (first != std::string::npos)
+		while (first != (int) std::string::npos)
 		{
 			if (line[first] == '#')
 				break ;

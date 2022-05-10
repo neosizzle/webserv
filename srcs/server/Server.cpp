@@ -177,19 +177,18 @@ long	Server::accept()
  */
 int	Server::recv(long socket)
 {
-	int			res;
 	int			bytes_read;
 	char		buf[BUFF_SIZE] = {0};
 	std::string	buffer;
 	int			content_len;
 
-	res = ::recv(socket, buf, BUFF_SIZE - 1, 0);
+	bytes_read = ::recv(socket, buf, BUFF_SIZE - 1, 0);
 
 	//error checking
-	if (res <= 0)
+	if (bytes_read <= 0)
 	{
 		this->close(socket);
-		if (!res)
+		if (!bytes_read)
 			this->_logger.log(WARNING, "Client closed connection");
 		else
 		{
@@ -202,7 +201,7 @@ int	Server::recv(long socket)
 	//record raw buffer as request
 
 	//add all of buf read into buffer string
-	for (int i = 0; i < res; ++i)
+	for (int i = 0; i < bytes_read; ++i)
 		buffer += buf[i];
 
 	this->_requests[socket] += buffer;

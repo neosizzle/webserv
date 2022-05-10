@@ -7,10 +7,17 @@ HttpConfig::~HttpConfig(){}
 
 HttpConfig::HttpConfig(ServerConfig *location, std::string route)
 {
+	(void) route;
 	std::string	root;
 	std::vector<std::string> methods;
 	std::vector<std::string> indexes;
+	long	max_size;
 
+	if (!location)
+	{
+		this->_no_location = true;
+		return ;
+	}
 	root = location->get_root();
 
 	//trim location root slash
@@ -18,8 +25,8 @@ HttpConfig::HttpConfig(ServerConfig *location, std::string route)
 		root = root.erase(root.size() - 1);
 	this->_path = root;
 	this->_error_pages = location->get_error_pages();
-	this->_max_size = location->get_max_size();
 	this->_upload_path = location->get_upload_path();
+	this->_no_location = false;
 	//cgi stuff here..
 
 	methods = location->get_methods();
@@ -31,8 +38,15 @@ HttpConfig::HttpConfig(ServerConfig *location, std::string route)
 	indexes = location->get_indexes();
 	if (indexes.size() == 0)
 		indexes.push_back("index.html");
-	for (std::vector<std::string>::iterator i = indexes.begin(); i != indexes.end(); i++)
-		this->_indexes.push_back(root + "/" + *i);
+	this->_indexes = indexes;
+
+	//max size
+	max_size = location->get_max_size();
+	if (max_size < 1)
+		max_size = -1;
+	this->_max_size = max_size;
+	// for (std::vector<std::string>::iterator i = indexes.begin(); i != indexes.end(); i++)
+	// 	this->_indexes.push_back(root + "/" + *i);
 	
 
 	this->_autoidx = location->get_autoindex();
@@ -65,3 +79,7 @@ std::string	HttpConfig::get_path(){return this->_path;}
 std::vector<std::string>	HttpConfig::get_indexes(){return this->_indexes;}
 
 std::map<int, std::string>	HttpConfig::get_error_pages(){return this->_error_pages;}
+
+std::string					HttpConfig::get_upload_path(){return this->_upload_path;}
+
+long						HttpConfig::get_max_size(){return this->_max_size;}

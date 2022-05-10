@@ -11,9 +11,10 @@
  * 
  * @param file_path 
  * @param file_contents 
+ * @param overwrite 1 if overwritting enabled
  * @return int 0 OK, 2 File exists, 1 Error
  */
-int	Response::_do_upload(std::string file_path, std::string file_contents)
+int	Response::_do_upload(std::string file_path, std::string file_contents, int overwrite)
 {
 	std::ofstream						new_file;
 	std::ifstream						existing_file;
@@ -24,7 +25,8 @@ int	Response::_do_upload(std::string file_path, std::string file_contents)
 		if (existing_file.is_open())
 		{
 			existing_file.close();
-			return 2;
+			if (!overwrite)
+				return 2;
 		}
 		new_file.open(file_path.c_str());
 		new_file << file_contents;
@@ -194,9 +196,8 @@ int	Response::_parse_form_data(std::string body, std::string boundary , std::map
  * @param root 
  * @return std::string 
  */
-std::string	Response::_resolve_filepath(std::string route, std::string root)
+int	Response::_resolve_filepath(std::string route, std::string root, std::string &res)
 {
-	std::string	res;
 	std::vector<std::string>			indexes;
 	std::vector<std::string>::iterator	indexes_iter;
 
@@ -204,18 +205,20 @@ std::string	Response::_resolve_filepath(std::string route, std::string root)
 	indexes_iter = indexes.begin();
 	while (indexes_iter != indexes.end())
 	{
-		this->_logger.log(DEBUG, *indexes_iter);
-		indexes_iter++;
+		if (!ft_endswith(root, "/")) root += "/";
+		if (ft_file_exist(root + *indexes_iter))
+			break ;
+		++indexes_iter;
 	}
 	if (indexes_iter == indexes.end())
-		--indexes_iter;
+		return 1;
 	if (ft_endswith(route, "/"))
-		res = root + route + index_file;
+		res = root + route + *indexes_iter;
 	else if (route.find(".") == std::string::npos)
-		res = root + route + "/" + index_file;
+		res = root + route + "/" + *indexes_iter;
 	else
 		res = root + route;
-	return res;
+	return 0;
 }
 
 /**
@@ -231,7 +234,7 @@ std::string	Response::_resolve_status(int code)
 	switch (code)
 	{
 	case 201:
-		status = std::string("Created");
+		status = std::string(" Created");
 		break;
 	case 307:
 		status = std::string(" Temporary Redirect");
@@ -310,9 +313,7 @@ void	Response::_generate_autoidx(std::string path, std::string root)
 	FD = opendir(final_path.c_str());
 	if (FD == NULL)
 	{
-		final_path = root + "/" + not_found_file;
-		ft_readfile(final_path, file_contents);
-		this->_generate_response(404, file_contents);
+		this->_generate_err_response(404, this->_config.get_path());
 		perror("Failed to open directory");
 		return ;
 	}
@@ -336,4 +337,41 @@ void	Response::_generate_autoidx(std::string path, std::string root)
     }
 	closedir(FD);
 	this->_generate_response(200, ss.str());
+}
+
+/**
+ * @brief Generates error response 
+ * 
+ * @param code 
+ * @param root_path 
+ */
+void	Response::_generate_err_response(int code, std::string root_path)
+{
+	std::string	err_page_content;
+
+	if (this->_config.get_error_pages().count(code) == 0)
+	{
+		this->_generate_response(code, this->_resolve_status(code));
+		return ;
+	}
+	if (ft_beginswith(this->_config.get_error_pages()[code], "/"))
+		ft_readfile(root_path + this->_config.get_error_pages()[code], err_page_content);
+	else
+		ft_readfile(root_path + "/" + this->_config.get_error_pages()[code], err_page_content);
+	this->_generate_response(code, err_page_content);
+}
+
+/**
+ * @brief Deletes a file specified in filepath
+ * 
+ * @param filepath 
+ * @return int 0 is success, -1 if not found, nonzero if error
+ */
+int	Response::_do_delete(std::string filepath)
+{
+	int res;
+
+	res = remove(filepath.c_str());
+	// this->_logger.log(DEBUG, "remove status " + ITOA(res));
+	return res;
 }

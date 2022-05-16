@@ -43,6 +43,7 @@
 #include <csignal>
 #include <regex.h>
 #include <sys/stat.h>
+#include <sys/wait.h>
 
 //containers
 #include <vector>

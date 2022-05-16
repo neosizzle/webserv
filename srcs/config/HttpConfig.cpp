@@ -48,7 +48,6 @@ HttpConfig::HttpConfig(ServerConfig *location, std::string route)
 	if (max_size < 1)
 		max_size = -1;
 	this->_max_size = max_size;
-	this->_logger.log(DEBUG, "CGI DIR FROM HTTPCFG " + this->_cgi_dir);
 	// for (std::vector<std::string>::iterator i = indexes.begin(); i != indexes.end(); i++)
 	// 	this->_indexes.push_back(root + "/" + *i);
 	

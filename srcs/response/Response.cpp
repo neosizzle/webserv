@@ -313,7 +313,6 @@ void	Response::call(Request	request, HttpConfig requestConfig)
 			Cgi	cgi(this->_config.get_cgi_dir(), i->second);
 
 			cgi.executeCgi(request, cgi_res);
-			this->_logger.log(DEBUG, "cgi found ext " + i->first);
 		}
 	}
 	

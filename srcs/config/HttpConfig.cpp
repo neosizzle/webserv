@@ -27,7 +27,10 @@ HttpConfig::HttpConfig(ServerConfig *location, std::string route)
 	this->_error_pages = location->get_error_pages();
 	this->_upload_path = location->get_upload_path();
 	this->_no_location = false;
+	this->_redirect = location->get_redirect();
 	//cgi stuff here..
+	this->_cgi_param = location->get_cgi_info();
+	this->_cgi_dir = location->get_cgi_bin_path();
 
 	methods = location->get_methods();
 	if (methods.size() == 0)
@@ -45,6 +48,7 @@ HttpConfig::HttpConfig(ServerConfig *location, std::string route)
 	if (max_size < 1)
 		max_size = -1;
 	this->_max_size = max_size;
+	this->_logger.log(DEBUG, "CGI DIR FROM HTTPCFG " + this->_cgi_dir);
 	// for (std::vector<std::string>::iterator i = indexes.begin(); i != indexes.end(); i++)
 	// 	this->_indexes.push_back(root + "/" + *i);
 	
@@ -58,11 +62,12 @@ HttpConfig &HttpConfig::operator=(const HttpConfig &other)
 	this->_error_pages = other._error_pages;
 	this->_max_size = other._max_size;
 	this->_cgi_param = other._cgi_param;
-	this->_cgi_pass = other._cgi_pass;
+	this->_cgi_dir = other._cgi_dir;
 	this->_methods = other._methods;
 	this->_indexes = other._indexes;
 	this->_autoidx = other._autoidx;
 	this->_upload_path = other._upload_path;
+	this->_redirect = other._redirect;
 
 	return *this;
 }
@@ -83,3 +88,9 @@ std::map<int, std::string>	HttpConfig::get_error_pages(){return this->_error_pag
 std::string					HttpConfig::get_upload_path(){return this->_upload_path;}
 
 long						HttpConfig::get_max_size(){return this->_max_size;}
+
+std::string					HttpConfig::get_redirect(){return this->_redirect;}
+
+std::map<std::string, std::string>	HttpConfig::get_cgi_param(){return this->_cgi_param;}
+
+std::string					HttpConfig::get_cgi_dir(){return this->_cgi_dir;}

@@ -49,7 +49,7 @@ class ServerConfig
 		std::vector<ServerConfig> 			_locations;
 		std::string							_location_url;
 		LocationModifier					_location_modifier;
-		std::map<int, std::string>			_redirect;
+		std::string							_redirect;
 		
 		void	_init_default_values();//initializes default mandatory directives
 		void	_init_dir_operations();//initialize directive operations
@@ -85,6 +85,7 @@ class ServerConfig
 		std::map<int, std::string>			get_error_pages();
 		long								get_max_size();
 		std::map<std::string, std::string>	get_cgi_info();
+		std::string							get_cgi_bin_path();
 		std::vector<LocationConfig>			get_locations();
 		std::vector<Listen>					get_listens();
 		std::string							get_location_url();
@@ -93,6 +94,7 @@ class ServerConfig
 		bool								get_autoindex();
 		std::vector<std::string>			get_indexes();
 		std::string							get_upload_path();
+		std::string							get_redirect();
 
 		//setters
 		void	set_server_name(std::vector<std::string> server_name);

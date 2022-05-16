@@ -375,3 +375,21 @@ int	Response::_do_delete(std::string filepath)
 	// this->_logger.log(DEBUG, "remove status " + ITOA(res));
 	return res;
 }
+
+/**
+ * @brief Generates a http redirection response
+ * 
+ * @param location 
+ */
+void	Response::_generate_redirection(std::string location)
+{
+	std::string	response_str;
+	std::string	response_fst_line;
+
+	response_fst_line = "HTTP/1.1 " + ITOA(301) + this->_resolve_status(301);
+	response_str += (response_fst_line + "\n");
+	response_str += "Location: " + location + "\n";
+	response_str += "Content-Type: text/html\n\n";
+
+	this->_raw = response_str;
+}

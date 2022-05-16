@@ -4,6 +4,7 @@
 #include "Request.hpp"
 #include "HttpConfig.hpp"
 #include "Logger.hpp"
+#include "Cgi.hpp"
 
 //class for a single response instance, contains http response data
 class Response
@@ -16,14 +17,16 @@ private:
 	std::map<std::string, std::string>	_headers;	//response headers
 	HttpConfig							_config	;	//config for processing request and generating response 
 	Logger								_logger;
-	//config variables go here.....
 
-	void								_process_get(Request request); //config as param
-	void								_process_post(Request request); //config as param
-	void								_process_put(Request request); //config as param
-	void								_process_delete(Request request); //config as param
+	void								_process_get(Request request);
+	void								_process_post(Request request);
+	void								_process_put(Request request);
+	void								_process_delete(Request request);
+
+	void								_process_put_tester(Request request);
 
 	//general utils
+	void								_generate_redirection(std::string location);//generates redirection reponse
 	void								_generate_response(int code, std::string body);//generates respons str
 	std::string							_resolve_status(int code);//resolves status text given the status code
 	int									_parse_form_data(std::string body, std::string boudary, std::map<std::string, std::string> &form_data);//parses form data and returns a map of key value pairs

@@ -15,11 +15,12 @@ class HttpConfig
 		std::map<int, std::string>			_error_pages;	//directory of error pages for error codes
 		long								_max_size;		//body max size
 		std::map<std::string, std::string>	_cgi_param;		//cgi stuff
-		std::string							_cgi_pass;		//cgi stuff
+		std::string							_cgi_dir;		//cgi stuff
 		std::vector<std::string>			_methods;		//allowed methods
 		std::vector<std::string>			_indexes;		//directory for index files
 		bool								_autoidx;		//autoindex
-		bool								_no_location;	//no location
+		std::string							_redirect;		//redirection
+		bool								_no_location;	//no location switch
 		Logger								_logger;
 	public:
 		//constructors
@@ -31,13 +32,16 @@ class HttpConfig
 		HttpConfig &operator=(const HttpConfig &other);
 
 		//ill add getters and setters as we go
-		std::vector<std::string>	get_methods();
-		std::string					get_path();
-		bool						get_autoindex();
-		std::vector<std::string>	get_indexes();
-		std::map<int, std::string>	get_error_pages();
-		std::string					get_upload_path();
-		long						get_max_size();
+		std::vector<std::string>			get_methods();
+		std::string							get_path();
+		bool								get_autoindex();
+		std::vector<std::string>			get_indexes();
+		std::map<int, std::string>			get_error_pages();
+		std::string							get_upload_path();
+		long								get_max_size();
+		std::string							get_redirect();
+		std::map<std::string, std::string>	get_cgi_param();
+		std::string							get_cgi_dir();
 };
 
 #endif  //!__HTTPCONFIG__H__

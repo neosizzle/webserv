@@ -53,15 +53,6 @@ void	Response::_generate_response(int code, std::string body)
 }
 
 //processes get requests
-// char	*response = "HTTP/1.1 200 OK\n"
-// "Date: Mon, 27 Jul 2009 12:28:53 GMT\n"
-// "Server: Apache/2.2.14 (Win32)\n"
-// "Last-Modified: Wed, 22 Jul 2009 19:15:56 GMT\n"
-// "Content-Length: 19\n"
-// "Content-Type: text/html\n"
-// "\n<h1>it gets :o</h1>";
-
-// this->_raw = std::string(response);
 void	Response::_process_get(Request request)
 {
 	std::string	file_path;
@@ -283,12 +274,14 @@ void	Response::_process_delete(Request request)
 //generate response to populate raw response string
 void	Response::call(Request	request, HttpConfig requestConfig)
 {
-	std::string	method;
-	std::vector<std::string>	allowed_methods;
+	std::string							method;
+	std::string							cgi_res;
+	std::map<std::string, std::string>	cgi_params;
+	std::vector<std::string>			allowed_methods;
 
 	this->_config = requestConfig;
 	method = request.get_method();
-
+	cgi_params = this->_config.get_cgi_param();
 	allowed_methods = this->_config.get_methods();
 	
 	//resolve files
@@ -302,13 +295,36 @@ void	Response::call(Request	request, HttpConfig requestConfig)
 		return ;
 	}
 
+	//check for redirection
+	if (this->_config.get_redirect().size() > 0)
+	{
+		this->_generate_redirection(this->_config.get_redirect());
+		return ;
+	}
+
+	//check for cgi
+	for (std::map<std::string, std::string>::iterator i = cgi_params.begin();
+	i != cgi_params.end();
+	i++)
+	{
+		if (request.get_route().find(".") == std::string::npos) break ;
+		if (request.get_route().substr(request.get_route().find(".")) == i->first)
+		{
+			Cgi	cgi(this->_config.get_cgi_dir(), i->second);
+
+			cgi.executeCgi(request, cgi_res);
+			this->_logger.log(DEBUG, "cgi found ext " + i->first);
+		}
+	}
+	
+
 	//process requests
 	if (request.get_method() == "GET")
 		this->_process_get(request);
 	else if (request.get_method() == "POST")
 		this->_process_post(request);
 	else if (request.get_method() == "PUT")
-		this->_process_put(request);
+		this->_process_put_tester(request);
 	else if (request.get_method() == "DELETE")
 		this->_process_delete(request);
 	else

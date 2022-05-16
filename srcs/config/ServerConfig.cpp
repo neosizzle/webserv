@@ -444,19 +444,13 @@ int		ServerConfig::_parse_redirect(std::vector<std::string>::iterator &iter)
 	std::string	status_str;
 	std::string	new_path;
 
-	status_str = *iter++;
-	if (status_str.find_first_not_of("1234567890") != std::string::npos)
-	{
-		this->_logger.log(ERROR, "invalid return redirect value " + status_str);;
-		return 1;
-	}
 	new_path = *iter++;
 	if (*iter != ";")
 	{
 		this->_logger.log(ERROR, "multiple redirect value " + *iter);
 		return 1;
 	}
-	this->_redirect.insert(std::make_pair(std::atoi(status_str.c_str()), new_path));
+	this->_redirect = new_path;
 	return 0;
 }
 
@@ -563,7 +557,7 @@ void	ServerConfig::_init_dir_operations()
 	this->_directive_operations["cgi"] = &ServerConfig::_parse_cgi;
 	this->_directive_operations["upload"] = &ServerConfig::_parse_upload;
 	this->_directive_operations["autoindex"] = &ServerConfig::_parse_autoindex;
-	this->_directive_operations["return"] = &ServerConfig::_parse_redirect;
+	this->_directive_operations["redirect"] = &ServerConfig::_parse_redirect;
 }
 
 /**
@@ -701,3 +695,9 @@ bool	ServerConfig::get_autoindex(){return this->_autoindex;}
 std::vector<std::string>	ServerConfig::get_indexes(){return this->_index_files;}
 
 std::string	ServerConfig::get_upload_path(){return this->_upload_path;}
+
+std::string ServerConfig::get_redirect(){return this->_redirect;}
+
+std::string ServerConfig::get_cgi_bin_path(){return this->_cgi_bin_path;}
+
+std::map<std::string, std::string> ServerConfig::get_cgi_info(){return this->_cgi_info;}

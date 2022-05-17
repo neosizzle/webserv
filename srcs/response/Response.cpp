@@ -310,7 +310,7 @@ void	Response::call(Request	request, HttpConfig requestConfig)
 		if (request.get_route().find(".") == std::string::npos) break ;
 		if (request.get_route().substr(request.get_route().find(".")) == i->first)
 		{
-			Cgi	cgi(this->_config.get_cgi_dir(), i->second);
+			Cgi	cgi(this->_config.get_cgi_dir(), i->second, this->_config);
 
 			cgi.executeCgi(request, cgi_res);
 		}

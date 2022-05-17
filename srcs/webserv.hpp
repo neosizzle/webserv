@@ -24,6 +24,8 @@
 #define BUFF_SIZE 1000000
 #define CRLF "\r\n\r\n"
 #define DEFAULT_CONF "/home/nszl/42cursus/webserv/config/sample2.conf"
+#define PIPE_IN 1
+#define PIPE_OUT 0
 
 //logging
 #define DEBUG 0

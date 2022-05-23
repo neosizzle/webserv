@@ -71,8 +71,8 @@ void	Response::_process_get(Request request)
 		this->_generate_err_response(404, this->_config.get_path());
 		return ;
 	}
-	//this->_logger.log(DEBUG, "file path " + file_path);
 
+	// this->_logger.log(DEBUG, "file path " + file_path);
 	//read file and generate response
 	//ft_readfile returns 1 if file is not found
 	if (ft_readfile(file_path, file_contents))
@@ -285,7 +285,6 @@ void	Response::call(Request	request, HttpConfig requestConfig)
 	cgi_params = this->_config.get_cgi_param();
 	allowed_methods = this->_config.get_methods();
 	
-	//resolve files
 
 	//check for allowed methods from cfg
 	if (std::find(allowed_methods.begin(), 

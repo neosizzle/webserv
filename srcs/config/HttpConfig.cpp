@@ -30,6 +30,7 @@ HttpConfig::HttpConfig(ServerConfig *location, std::string route, int port, unsi
 	this->_redirect = location->get_redirect();
 	this->_port = port;
 	this->_host = host;
+	this->_location_url = location->get_location_url();
 	//cgi stuff here..
 	this->_cgi_param = location->get_cgi_info();
 	this->_cgi_dir = location->get_cgi_bin_path();
@@ -71,7 +72,7 @@ HttpConfig &HttpConfig::operator=(const HttpConfig &other)
 	this->_autoidx = other._autoidx;
 	this->_upload_path = other._upload_path;
 	this->_redirect = other._redirect;
-
+	this->_location_url = other._location_url;
 	return *this;
 }
 
@@ -101,3 +102,5 @@ std::string					HttpConfig::get_cgi_dir(){return this->_cgi_dir;}
 int							HttpConfig::get_port(){return this->_port;}
 
 unsigned int				HttpConfig::get_host(){return this->_host;}
+
+std::string					HttpConfig::get_location_url(){return this->_location_url;}

@@ -203,21 +203,27 @@ int	Response::_resolve_filepath(std::string route, std::string root, std::string
 
 	indexes = this->_config.get_indexes();
 	indexes_iter = indexes.begin();
+	if (!ft_endswith(root, "/")) root += "/";
 	while (indexes_iter != indexes.end())
 	{
-		if (!ft_endswith(root, "/")) root += "/";
 		if (ft_file_exist(root + *indexes_iter))
 			break ;
 		++indexes_iter;
 	}
 	if (indexes_iter == indexes.end())
 		return 1;
+
+	//location subsitution
+	if (ft_beginswith(route, this->_config.get_location_url()))
+		route = route.substr(this->_config.get_location_url().size());
 	if (ft_endswith(route, "/"))
 		res = root + route + *indexes_iter;
 	else if (route.find(".") == std::string::npos)
 		res = root + route + "/" + *indexes_iter;
 	else
 		res = root + route;
+
+	this->_logger.log(DEBUG, " res " + res);
 	return 0;
 }
 
@@ -372,7 +378,6 @@ int	Response::_do_delete(std::string filepath)
 	int res;
 
 	res = remove(filepath.c_str());
-	// this->_logger.log(DEBUG, "remove status " + ITOA(res));
 	return res;
 }
 

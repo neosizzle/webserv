@@ -23,6 +23,7 @@ class HttpConfig
 		bool								_autoidx;		//autoindex
 		std::string							_redirect;		//redirection
 		bool								_no_location;	//no location switch
+		std::string							_location_url;
 		Logger								_logger;
 	public:
 		//constructors
@@ -46,6 +47,7 @@ class HttpConfig
 		std::string							get_cgi_dir();
 		int									get_port();
 		unsigned int						get_host();
+		std::string							get_location_url();
 };
 
 #endif  //!__HTTPCONFIG__H__

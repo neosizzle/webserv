@@ -119,10 +119,10 @@ int	ft_beginswith(std::string str, std::string needle)
 	j = 0;
 	while (j < needle.size())
 	{
-		i++;
-		j++;
 		if (i > str.size() || str[i] != needle[j])
 			return 0;
+		i++;
+		j++;
 	}
 	return 1;
 }

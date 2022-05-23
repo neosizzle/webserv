@@ -12,10 +12,13 @@ class Cgi
 		std::string							_cgi_executable;
 		HttpConfig							_config;
 		std::map<std::string, std::string>	_env;
+		std::string							_cwd;
 		Logger								_logger;
 
 		char**	_convert_envp_to_c();
 		void	_generate_envp(Request request);
+		static	void	_sig_handler(int sig){(void) sig;}
+
 	public:
 		Cgi();
 		~Cgi();

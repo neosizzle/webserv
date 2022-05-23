@@ -10,6 +10,8 @@
 class HttpConfig
 {
 	private:
+		int									_port;
+		unsigned int						_host;
 		std::string							_path;			//directory for request to search
 		std::string							_upload_path;	//directory for file uploads
 		std::map<int, std::string>			_error_pages;	//directory of error pages for error codes
@@ -27,7 +29,7 @@ class HttpConfig
 		HttpConfig();
 		~HttpConfig();
 		HttpConfig(const HttpConfig &other);
-		HttpConfig(ServerConfig *location, std::string route);
+		HttpConfig(ServerConfig *location, std::string route, int port, unsigned int host);
 
 		HttpConfig &operator=(const HttpConfig &other);
 
@@ -42,6 +44,8 @@ class HttpConfig
 		std::string							get_redirect();
 		std::map<std::string, std::string>	get_cgi_param();
 		std::string							get_cgi_dir();
+		int									get_port();
+		unsigned int						get_host();
 };
 
 #endif  //!__HTTPCONFIG__H__

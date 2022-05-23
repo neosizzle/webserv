@@ -278,6 +278,7 @@ void	Response::call(Request	request, HttpConfig requestConfig)
 	std::string							cgi_res;
 	std::map<std::string, std::string>	cgi_params;
 	std::vector<std::string>			allowed_methods;
+	int									cgi_status;
 
 	this->_config = requestConfig;
 	method = request.get_method();
@@ -312,7 +313,13 @@ void	Response::call(Request	request, HttpConfig requestConfig)
 		{
 			Cgi	cgi(this->_config.get_cgi_dir(), i->second, this->_config);
 
-			cgi.executeCgi(request, cgi_res);
+			cgi_status = cgi.executeCgi(request, cgi_res);
+			if (cgi_status > 299 && cgi_res.size() < 1)
+				this->_generate_err_response(cgi_status, this->_config.get_path());
+			else
+				this->_generate_response(cgi_status, cgi_res);
+			
+			return ;
 		}
 	}
 	

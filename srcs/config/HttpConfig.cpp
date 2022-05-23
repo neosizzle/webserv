@@ -5,7 +5,7 @@ HttpConfig::HttpConfig(){}
 
 HttpConfig::~HttpConfig(){}
 
-HttpConfig::HttpConfig(ServerConfig *location, std::string route)
+HttpConfig::HttpConfig(ServerConfig *location, std::string route, int port, unsigned int host)
 {
 	(void) route;
 	std::string	root;
@@ -28,6 +28,8 @@ HttpConfig::HttpConfig(ServerConfig *location, std::string route)
 	this->_upload_path = location->get_upload_path();
 	this->_no_location = false;
 	this->_redirect = location->get_redirect();
+	this->_port = port;
+	this->_host = host;
 	//cgi stuff here..
 	this->_cgi_param = location->get_cgi_info();
 	this->_cgi_dir = location->get_cgi_bin_path();
@@ -57,6 +59,8 @@ HttpConfig::HttpConfig(ServerConfig *location, std::string route)
 
 HttpConfig &HttpConfig::operator=(const HttpConfig &other)
 {
+	this->_host = other._host;
+	this->_port = other._port;
 	this->_path = other._path;
 	this->_error_pages = other._error_pages;
 	this->_max_size = other._max_size;
@@ -93,3 +97,7 @@ std::string					HttpConfig::get_redirect(){return this->_redirect;}
 std::map<std::string, std::string>	HttpConfig::get_cgi_param(){return this->_cgi_param;}
 
 std::string					HttpConfig::get_cgi_dir(){return this->_cgi_dir;}
+
+int							HttpConfig::get_port(){return this->_port;}
+
+unsigned int				HttpConfig::get_host(){return this->_host;}

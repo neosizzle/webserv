@@ -290,10 +290,10 @@ void	Server::process(long socket)
 	if (!location)
 		this->_logger.log(DEBUG, "no location");
 	else
-		this->_logger.log(DEBUG, "location found, " + location->get_location_url());
+		this->_logger.log(DEBUG, "location match " + location->get_location_url());
 
 	//generate request config
-	HttpConfig	reqCfg(location, request.get_route());
+	HttpConfig	reqCfg(location, request.get_route(), this->_port, this->_host);
 
 	//generate response
 	response.call(request, reqCfg);

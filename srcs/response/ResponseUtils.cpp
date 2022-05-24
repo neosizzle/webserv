@@ -19,6 +19,8 @@ int	Response::_do_upload(std::string file_path, std::string file_contents, int o
 	std::ofstream						new_file;
 	std::ifstream						existing_file;
 
+	// this->_logger.log(DEBUG, "|" + file_contents + "|");
+	this->_logger.log(DEBUG, "Content size " + ITOA(file_contents.size()));
 	try
 	{
 		existing_file.open(file_path.c_str());
@@ -223,7 +225,6 @@ int	Response::_resolve_filepath(std::string route, std::string root, std::string
 	else
 		res = root + route;
 
-	this->_logger.log(DEBUG, " res " + res);
 	return 0;
 }
 

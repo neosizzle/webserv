@@ -173,7 +173,7 @@ long	Server::accept()
  * 		- If there is no chunked request, validate request length match Content-Length header and 
  * 		  the request should be complete (return 0)
  * @param socket client socket which is READ READY
- * @return int status . 0 if request is complete, 1 if request is still not complete
+ * @return int status. 0 if request is complete, 1 if request is still not complete
  */
 int	Server::recv(long socket)
 {
@@ -204,6 +204,13 @@ int	Server::recv(long socket)
 	for (int i = 0; i < bytes_read; ++i)
 		buffer += buf[i];
 
+	// //trim chunked body fields
+	// if (this->_requests[socket].find("Transfer-Encoding: chunked") != std::string::npos)
+	//  {
+	// 	//check if buffer is last chunk
+	// 	if (ft_endswith(buffer, "0\r\n\r\n"))
+	// 		this->_logger.log(DEBUG, "last chunk found " + buffer);
+	//  }
 	this->_requests[socket] += buffer;
 
 	//can find crlf in request (request complete)
@@ -216,8 +223,8 @@ int	Server::recv(long socket)
 			//if there is chunked
 			if (this->_requests[socket].find("Transfer-Encoding: chunked") != std::string::npos)
 			{
-				//if chunked requests ends wuth crlf (end of request)
-				if (ft_endswith(this->_requests[socket], CRLF))
+				//if chunked requests ends with null + crlf (end of request)
+				if (ft_endswith(this->_requests[socket], "0\r\n\r\n"))
 					return 0;
 				return 1;	
 			}
@@ -283,7 +290,7 @@ void	Server::process(long socket)
 		this->_unchunk_chunks(socket);
 
 	//no chunk, proceeed as normal
-	Request request(raw_req);
+	Request request(this->_requests[socket]);
 	
 	//obtain location block config
 	location = this->_serv_cfg.match_location(request.get_route());
@@ -308,22 +315,48 @@ void	Server::process(long socket)
 
 /**
  * @brief Send response to a specified socket
+ * 
+ * 1. Craete a map <socket, bytes sent> to keep track of sent bytes (send can allow up to 20000000 at once)
+ * 2. Check if socket exists in map. If not, init to zero
+ * 3. Send BUFF_SIZE bytes to socket, return -1 on error
+ * 4. Update map
+ * 5. If the snet bytes is >= than the response size, return 0 (complete), else return 1
+ * 
  * @attention Optimization can be made using a map to keep track 
  * 				Wether or not the send length is completed and return custom status codes
  * 
  * @param socket 
- * @return int 
+ * @return int 0 is complete, 1 is not complete, -1 if error
  */
 int	Server::send(long socket)
 {
-	std::string	response_raw;
-	std::string	request_raw;
-	int			res;
+	std::string						response_raw;
+	std::string						request_raw;
+	std::string						segment;
+	int								res;
+	static std::map<long, size_t>	sent;
+
+	if (sent.find(socket) == sent.end())
+		sent[socket] = 0;
 
 	response_raw = this->_responses[socket];
-	this->_logger.log(INFO, "Response : " + response_raw.substr(0, response_raw.find("\n")));
-	res = ::send(socket, response_raw.c_str(), response_raw.size(), 0);
-	return res;
+	segment = response_raw.substr(sent[socket], BUFF_SIZE);
+	res = ::send(socket, segment.c_str(), segment.size(), 0);
+	this->_logger.log(INFO, "Response : " + response_raw.substr(0, response_raw.find("\n")) + " sent bytes: " + ITOA(res));
+	if (res == -1)
+	{
+		this->close(socket);
+		sent[socket] = 0;
+		return -1;
+	}
+	sent[socket] += res;
+	if (sent[socket] >= response_raw.size())
+	{
+		this->_responses.erase(socket);
+		sent[socket] = 0;
+		return 0;
+	}
+	return 1;
 }
 
 //manipulates a chunked response string

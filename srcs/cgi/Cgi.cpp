@@ -30,19 +30,27 @@ Cgi& Cgi::operator=(const Cgi& other)
 
 void	Cgi::_generate_envp(Request request)
 {
+	std::string	route;
+
+	//locaiton subsitution
+	route = request.get_route();
+	if (ft_beginswith(route, this->_config.get_location_url()))
+		route = route.substr(this->_config.get_location_url().size());
 	this->_env["AUTH_TYPE"] = "";
 	this->_env["REDIRECT_STATUS"] = "200";
-	this->_env["CONTENT_LENGTH"] = request.get_body().size() > 0 ? ITOA(request.get_body().size()) : "";
+	// this->_logger.log(DEBUG, "req body "+ request.get_body());
+	this->_env["CONTENT_LENGTH"] = request.get_body().size() > 0 ? ITOA(request.get_body().size()) : "0";
 	this->_env["CONTENT_TYPE"] = request.get_headers()["Content-Type"];
 	this->_env["GATEWAY_INTERFACE"] = "CGI/1.1";
-	//http header neeeded?
-	this->_env["PATH_INFO"] = this->_cwd + "/" + this->_config.get_path() + request.get_route();
-	this->_env["PATH_TRANSLATED"] =  this->_cwd + "/" + this->_config.get_path() + request.get_route();
+	//http header neeeded
+	this->_env["PATH_INFO"] = this->_cwd + "/" + this->_config.get_path() + route;
+	this->_env["PATH_TRANSLATED"] =  this->_cwd + "/" + this->_config.get_path() + route;
 	this->_env["QUERY_STRING"] = ""; //we dont support query strings
 	this->_env["REMOTE_ADDR"] = ITOA(this->_config.get_host());
 	//remote host / localhost (?)
+	this->_env["REQUEST_URI"] = this->_cwd + "/" + this->_config.get_path() + route;
 	this->_env["REQUEST_METHOD"] = request.get_method();
-	this->_env["SCRIPT_NAME"] =  this->_config.get_path() + request.get_route();
+	this->_env["SCRIPT_NAME"] =  this->_cwd + "/" + this->_cgi_path +  "/" + this->_cgi_executable;
 	this->_env["SERVER_PROTOCOL"] = "HTTP/1.1";
 	this->_env["SERVER_SOFTWARE"] = "webserv";
 }
@@ -82,12 +90,19 @@ int	Cgi::executeCgi(Request request, std::string& body)
 {
 	std::string	cgi_path;
 	pid_t		pid;
+	std::string	route;
 	int			child_status;
-	int			content_pipe[2];
-	int			output_pipe[2];
 	std::string	file_content;
-	char		read_buff[BUFF_SIZE];
+	char		*cwd = getcwd(NULL, 0);
+	std::string	arg_file;
 	std::string	cgi_output;
+	char		read_buff[BUFF_SIZE] = {0};
+	int			cgi_in_fd;
+	int			cgi_out_fd;
+	FILE		*cgi_infile;
+	FILE		*cgi_outfile;
+	int			og_stdin;
+	int			og_stdout;
 
 	//validate cgi params and cgi path
 	cgi_path = this->_cgi_path;
@@ -101,24 +116,36 @@ int	Cgi::executeCgi(Request request, std::string& body)
 	}
 	else
 	{
-		//create pipes
-		if (pipe(content_pipe) || pipe(output_pipe))
+
+		//create io files
+		cgi_infile = tmpfile();
+		cgi_outfile = tmpfile();
+		cgi_in_fd = fileno(cgi_infile);
+		cgi_out_fd = fileno(cgi_outfile);
+
+		// SAVING STDIN AND STDOUT IN ORDER TO TURN THEM BACK TO NORMAL LATER
+		og_stdin = dup(STDIN_FILENO);
+		og_stdout = dup(STDOUT_FILENO);
+
+		//tmpfile creation null check
+		if (!cgi_infile || !cgi_outfile)
 		{
-			body = "pipe() fail";
+			this->_logger.log(ERROR, " tmpfile craetion failed");
 			return 500;
 		}
 
-		//check for the requested file
-		if (!ft_file_exist(this->_config.get_path() + request.get_route()))
-		{
-			this->_logger.log(ERROR, "file not found " + this->_config.get_path() + request.get_route());
-			return 404;
-		}
+		//locaiton subsitution
+		route = request.get_route();
+		if (ft_beginswith(route, this->_config.get_location_url()))
+			route = route.substr(this->_config.get_location_url().size());
 
-		//write requested file content to pipe
-		ft_readfile(this->_config.get_path() + request.get_route(), file_content);
-		write(content_pipe[PIPE_IN], file_content.c_str(), file_content.size());
-		write(content_pipe[PIPE_IN], 0, 1);
+		arg_file = cwd + this->_config.get_path() + "/" + route;
+		free(cwd);
+
+		//write body to infile
+		write(cgi_in_fd, request.get_body().c_str(), request.get_body().size());
+		//  write(cgi_in_fd, "asdf", 4);
+		lseek(cgi_in_fd, 0, SEEK_SET);
 
 		//configure signal handler for sigchild
 		struct timeval timeout = {5,0};
@@ -135,26 +162,18 @@ int	Cgi::executeCgi(Request request, std::string& body)
 		//child
 		if (pid == 0)
 		{
-			//make output pipe on stdout of process
-			dup2(output_pipe[PIPE_IN], STDOUT_FILENO);
-			dup2(output_pipe[PIPE_IN], STDERR_FILENO);
-
-			//make content pipe out stdin of process
-			dup2(content_pipe[PIPE_OUT], STDIN_FILENO);
-
-			_generate_envp(request);
-
-			char	*argv[] = {(char *)cgi_path.c_str(), 0};
+			char	*argv[] = {(char *)cgi_path.c_str(), (char *)arg_file.c_str(),  0};
 			
 			//set envp of process
 			_generate_envp(request);
 			char	**envp = this->_convert_envp_to_c();
 
-			//close content pipe in
-			close(content_pipe[PIPE_IN]);
+			//make outfile stdout of process
+			dup2(cgi_out_fd, STDOUT_FILENO);
+			dup2(cgi_out_fd, STDERR_FILENO);
 
-			//clsoe content pipe out
-			close(output_pipe[PIPE_OUT]);
+			//make infile stdin of process
+			dup2(cgi_in_fd, STDIN_FILENO);
 
 			execve(argv[0], argv, envp);
 			perror("");
@@ -163,32 +182,37 @@ int	Cgi::executeCgi(Request request, std::string& body)
 		}
 		else
 		{
-			//close pipe out
-			close(content_pipe[PIPE_OUT]);
-
-			//close pipe in
-			close(content_pipe[PIPE_IN]);
-
-			//close pipe on
-			close(output_pipe[PIPE_IN]);
-
 			rc = select(0, NULL,NULL,NULL, &timeout );
 			if (rc < 0)
 			{
-				//read from output pipe
-				while (read(output_pipe[PIPE_OUT], read_buff, BUFF_SIZE))
+				//read from outfile pipe
+				lseek(cgi_out_fd, 0, SEEK_SET);
+				while (read(cgi_out_fd, read_buff, BUFF_SIZE - 1))
+				{
 					cgi_output += std::string(read_buff);
+					memset(read_buff, 0, BUFF_SIZE);
+				}
 				wait(&child_status);
 				body = cgi_output;
+				// this->_logger.log(DEBUG, "cgi put " + body);
+				// this->_logger.log(DEBUG, "SIZE " + ITOA(body.size()));
 				if (!child_status) return 200;
 				return 500;
 			}
 			else
 			{
-				this->_logger.log(ERROR, "timeout");
+				this->_logger.log(ERROR, "cgi timeout");
 				return 408;
 			}
 		}
+		dup2(og_stdin, STDIN_FILENO);
+		dup2(og_stdout, STDOUT_FILENO);
+		close(cgi_in_fd);
+		close(cgi_out_fd);
+		fclose(cgi_infile);
+		fclose(cgi_outfile);
+		close(og_stdin);
+		close(og_stdout);
 	}
 	return 200;
 }

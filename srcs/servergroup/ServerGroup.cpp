@@ -16,6 +16,18 @@ void	sig_handler(int signum)
 	ServerGroup::is_running = false;
 }
 
+/**
+ * @brief Sigal handler to handle sigpipes
+ * 
+ * @param signum 
+ */
+void	sigpip_handler(int signum)
+{
+	(void) signum;
+	std::cout << "\n";
+}
+
+
 ServerGroup::ServerGroup()
 {
 	this->_max_fd = 0;
@@ -151,6 +163,7 @@ void	ServerGroup::setup()
 	//atattch signal handler
 	signal(SIGINT, sig_handler);
 	signal(SIGTERM, sig_handler);
+	signal(SIGPIPE, sigpip_handler);
 }
 
 /**
@@ -243,26 +256,19 @@ void	ServerGroup::run()
 				// std::cout << "FD_ISSET("<<*responses_iter<<", writefd)" << FD_ISSET(*responses_iter, &(write_fds)) << "\n";
 				if (FD_ISSET(*responses_iter, &(write_fds)))
 				{
-					//response is getting sent here.... "HTTP/1.1 200 OK\n hello"
 					// send_ret = 	send(*responses_iter, response , strlen(response) , 0);
 					send_ret = this->_clients[*responses_iter]->send(*responses_iter);
 					if (send_ret < 0)
 					{
 						//error handling..
-						std::cout << "send error\n";
+						this->_logger.log(ERROR, "send error");
 						FD_CLR(*responses_iter, &(this->_fd_set));
 						FD_CLR(*responses_iter, &(read_fds_copy));
 						this->_clients.erase(*responses_iter);
 						this->_clients_write.erase(responses_iter);
 					}
-					// if (send_ret == 0)
-					// {
-					// 	this->_clients_write.erase(responses_iter);
-					// }
-					// this->_clients[*responses_iter]->close(*responses_iter);//close socket 
-					// this->_clients.erase(*responses_iter);//erase client 
-					this->_clients_write.erase(responses_iter);//erase write set
-					// FD_CLR(*responses_iter, &(this->_fd_set));//remove from fd set
+					else if (send_ret == 0)
+						this->_clients_write.erase(responses_iter);//erase write set
 					avail_fds_found = 0;
 					break;
 				}

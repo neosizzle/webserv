@@ -82,9 +82,11 @@ void Request::_parse_raw(std::string raw)
 		this->_headers.insert(std::make_pair(curr_key, curr_value));
 	}
 	
-	//extract body
+	//extract body (Removes trailing crlf)
 	if (start_idx != std::string::npos)
-		this->_body = raw.substr(start_idx, std::string::npos);
+		this->_body = raw.substr(start_idx);
+	if (ft_endswith(this->_body, CRLF))
+		this->_body.erase(this->_body.size() - 4);
 	// this->print_headers();
 	// this->print_body();
 	return ;

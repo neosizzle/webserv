@@ -3,6 +3,10 @@
 #include "ServerGroup.hpp"
 #include "Config.hpp"
 #include "Logger.hpp"
+
+//TODO fix crash when client dc during sending (SIGPIPE)
+//TODO fix special headers
+
 int main(int argc, char const *argv[])
 {
 	std::string	cfg_filename;
@@ -23,12 +27,6 @@ int main(int argc, char const *argv[])
 	logger.log(INFO, "loaded config " + cfg_filename);
 	group.configure(conf);
 	group.setup();
-	// std::vector<int> ports;
-	// ServerGroup group;
-
-	// ports.push_back(8080);
-	// ports.push_back(8081);
-	// group.setup(ports);
 	group.run();
-	// return 0;
+	return 0;
 }

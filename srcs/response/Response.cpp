@@ -43,11 +43,12 @@ void	Response::_generate_response(int code, std::string body)
 	int			body_length;
 	
 	body_length = body.length();
+	this->_body = body;
 	response_fst_line = "HTTP/1.1 " + ITOA(code) + this->_resolve_status(code);
 	response_str += (response_fst_line + "\n");
 	response_str += "Content-Length: " + ITOA(body_length) + "\n";
 	response_str += "Content-Type: text/html\n\n";
-	response_str += (body );
+	response_str += body;
 
 	this->_raw = response_str;
 }
@@ -285,7 +286,6 @@ void	Response::call(Request	request, HttpConfig requestConfig)
 	cgi_params = this->_config.get_cgi_param();
 	allowed_methods = this->_config.get_methods();
 	
-
 	//check for allowed methods from cfg
 	if (std::find(allowed_methods.begin(), 
 		allowed_methods.end(),
@@ -313,11 +313,19 @@ void	Response::call(Request	request, HttpConfig requestConfig)
 			Cgi	cgi(this->_config.get_cgi_dir(), i->second, this->_config);
 
 			cgi_status = cgi.executeCgi(request, cgi_res);
+
+			//trim and parse cgi res if its a http response
+			if (cgi_res.find("Status: ") != std::string::npos)
+				cgi_res = cgi_res.substr(cgi_res.find_last_of("\r\n") + 1);
+
 			if (cgi_status > 299 && cgi_res.size() < 1)
 				this->_generate_err_response(cgi_status, this->_config.get_path());
 			else
 				this->_generate_response(cgi_status, cgi_res);
-			
+
+			// this->_logger.log(DEBUG, "SIZE " + ITOA(this->_body.size()));
+			this->_logger.log(DEBUG, "RAW SIZE " + ITOA(this->_raw.size()));
+			// this->_logger.log(DEBUG, "RAW RES " + this->_raw);
 			return ;
 		}
 	}

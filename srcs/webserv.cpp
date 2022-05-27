@@ -4,8 +4,7 @@
 #include "Config.hpp"
 #include "Logger.hpp"
 
-//TODO fix crash when client dc during sending (SIGPIPE)
-//TODO fix special headers
+//TODO fix req uri and host
 
 int main(int argc, char const *argv[])
 {

@@ -15,7 +15,7 @@ void	Response::_process_put_tester(Request request)
 	//check the content length is under max size
 	if (this->_config.get_max_size() > 0 && std::atol(request.get_headers()["Content-Length"].c_str()) > this->_config.get_max_size())
 	{
-		this->_generate_response(400, "Maximum size exceeded");
+		this->_generate_response(413, "Maximum size exceeded");
 		return ;
 	}
 
@@ -41,4 +41,28 @@ void	Response::_process_put_tester(Request request)
 		return ;
 	}
 	this->_generate_response(500, this->_resolve_status(500) + " : Upload failed");
+}
+
+void	Response::_process_post_tester(Request request)
+{
+	std::string	route;
+	long		content_length;
+	
+	route = request.get_route();
+	content_length = std::atol(request.get_headers()["Content-Length"].c_str());
+	if (!content_length)
+		content_length = request.get_body().size();
+	this->_logger.log(DEBUG, "max size "+ ITOA(this->_config.get_max_size()));
+	//location subsitution
+	if (ft_beginswith(route, this->_config.get_location_url()))
+		route = route.substr(this->_config.get_location_url().size());
+	
+	//check the content length is under max size
+	if (this->_config.get_max_size() > 0 &&  content_length > this->_config.get_max_size())
+	{
+		this->_generate_response(413, "Maximum size exceeded");
+		return ;
+	}
+
+	this->_generate_response(204, this->_resolve_status(204) + " No content");
 }

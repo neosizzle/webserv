@@ -24,6 +24,7 @@ private:
 	void								_process_delete(Request request);
 
 	void								_process_put_tester(Request request);
+	void								_process_post_tester(Request request);
 
 	//general utils
 	void								_generate_redirection(std::string location);//generates redirection reponse

@@ -52,7 +52,7 @@ Server::Server(unsigned int host, int port)
 		exit (1);
 	}
 
-	if (listen(this->_server_fd, 69) < 0)
+	if (listen(this->_server_fd, 128) < 0)
 	{
 		this->_logger.log(ERROR, "Socket failed to listen.");		
 		perror("Server initialize fail, listen failed");

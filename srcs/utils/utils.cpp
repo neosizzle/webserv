@@ -301,3 +301,16 @@ bool	ft_directory_exist(std::string name)
 	else
 		return false;
 }
+
+std::string	ft_to_upper(std::string str)
+{
+	std::string	res;
+
+	res = str;
+	for (size_t i = 0; i < res.size(); i++)
+	{
+		if (res[i] >= 'a' && res[i] <= 'z')
+			res[i] -= 32;
+	}
+	return res;
+}

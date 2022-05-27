@@ -30,29 +30,48 @@ Cgi& Cgi::operator=(const Cgi& other)
 
 void	Cgi::_generate_envp(Request request)
 {
-	std::string	route;
+	std::string							route;
+	std::map<std::string, std::string>	headers_req;
+	std::string							header_val;
 
 	//locaiton subsitution
 	route = request.get_route();
 	if (ft_beginswith(route, this->_config.get_location_url()))
 		route = route.substr(this->_config.get_location_url().size());
-	this->_env["AUTH_TYPE"] = "";
 	this->_env["REDIRECT_STATUS"] = "200";
-	// this->_logger.log(DEBUG, "req body "+ request.get_body());
 	this->_env["CONTENT_LENGTH"] = request.get_body().size() > 0 ? ITOA(request.get_body().size()) : "0";
 	this->_env["CONTENT_TYPE"] = request.get_headers()["Content-Type"];
 	this->_env["GATEWAY_INTERFACE"] = "CGI/1.1";
-	//http header neeeded
 	this->_env["PATH_INFO"] = this->_cwd + "/" + this->_config.get_path() + route;
 	this->_env["PATH_TRANSLATED"] =  this->_cwd + "/" + this->_config.get_path() + route;
 	this->_env["QUERY_STRING"] = ""; //we dont support query strings
-	this->_env["REMOTE_ADDR"] = ITOA(this->_config.get_host());
-	//remote host / localhost (?)
+	this->_env["REMOTE_ADDR"] = ft_ltip(this->_config.get_host());
 	this->_env["REQUEST_URI"] = this->_cwd + "/" + this->_config.get_path() + route;
+	// this->_env["REQUEST_URI"] = request.get_route();
 	this->_env["REQUEST_METHOD"] = request.get_method();
 	this->_env["SCRIPT_NAME"] =  this->_cwd + "/" + this->_cgi_path +  "/" + this->_cgi_executable;
 	this->_env["SERVER_PROTOCOL"] = "HTTP/1.1";
 	this->_env["SERVER_SOFTWARE"] = "webserv";
+	this->_env["SERVER_PORT"] = ITOA(this->_config.get_port());
+	//append http headers from request
+	headers_req = request.get_headers();
+	for (std::map<std::string, std::string>::iterator i = headers_req.begin();
+	i != headers_req.end();
+	i++)
+	{
+		if (!i->second.empty())
+		{
+			if (ft_to_upper(i->first) == "HOST")
+			{
+				this->_env["HTTP_HOST"] = "asdfg";
+				continue ; 
+			}
+			header_val = "HTTP_" + ft_to_upper(i->first);
+			std::replace(header_val.begin(), header_val.end(), '-', '_');
+			this->_env[header_val] = i->second;
+    	}
+	}
+	
 }
 
 /**
@@ -116,7 +135,6 @@ int	Cgi::executeCgi(Request request, std::string& body)
 	}
 	else
 	{
-
 		//create io files
 		cgi_infile = tmpfile();
 		cgi_outfile = tmpfile();
@@ -148,7 +166,7 @@ int	Cgi::executeCgi(Request request, std::string& body)
 		lseek(cgi_in_fd, 0, SEEK_SET);
 
 		//configure signal handler for sigchild
-		struct timeval timeout = {5,0};
+		struct timeval timeout = {10,0};
 		int rc;
 		signal(SIGCHLD, this->_sig_handler);
 
@@ -167,7 +185,7 @@ int	Cgi::executeCgi(Request request, std::string& body)
 			//set envp of process
 			_generate_envp(request);
 			char	**envp = this->_convert_envp_to_c();
-
+			
 			//make outfile stdout of process
 			dup2(cgi_out_fd, STDOUT_FILENO);
 			dup2(cgi_out_fd, STDERR_FILENO);
@@ -194,7 +212,7 @@ int	Cgi::executeCgi(Request request, std::string& body)
 				}
 				wait(&child_status);
 				body = cgi_output;
-				// this->_logger.log(DEBUG, "cgi put " + body);
+				// this->_logger.log(DEBUG, "CGI OUT " + body);
 				// this->_logger.log(DEBUG, "SIZE " + ITOA(body.size()));
 				if (!child_status) return 200;
 				return 500;

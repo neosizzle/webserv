@@ -44,7 +44,7 @@ std::string	Request::_read_value(std::string str)
 	pos = str.find(":");
 	if (pos == std::string::npos)
 		return "";
-	return str.substr(pos + 1, str.length());
+	return str.substr(pos + 2, str.length());
 }
 
 /**

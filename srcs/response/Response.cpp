@@ -117,7 +117,7 @@ void	Response::_process_post(Request request)
 	//check the content length is under max size
 	if (this->_config.get_max_size() > 0 && std::atol(request.get_headers()["Content-Length"].c_str()) > this->_config.get_max_size())
 	{
-		this->_generate_response(400, "Maximum size exceeded");
+		this->_generate_response(413, "Maximum size exceeded");
 		return ;
 	}
 
@@ -194,7 +194,7 @@ void	Response::_process_put(Request request)
 	//check the content length is under max size
 	if (this->_config.get_max_size() > 0 && std::atol(request.get_headers()["Content-Length"].c_str()) > this->_config.get_max_size())
 	{
-		this->_generate_response(400, "Maximum size exceeded");
+		this->_generate_response(413, "Maximum size exceeded");
 		return ;
 	}
 
@@ -335,7 +335,7 @@ void	Response::call(Request	request, HttpConfig requestConfig)
 	if (request.get_method() == "GET")
 		this->_process_get(request);
 	else if (request.get_method() == "POST")
-		this->_process_post(request);
+		this->_process_post_tester(request);
 	else if (request.get_method() == "PUT")
 		this->_process_put_tester(request);
 	else if (request.get_method() == "DELETE")

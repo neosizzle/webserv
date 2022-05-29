@@ -13,7 +13,7 @@ Cgi::Cgi(const Cgi& other){*this = other;}
  * @param cgi_executable 
  * @param config 
  */
-Cgi::Cgi(std::string cgi_path, std::string cgi_executable, HttpConfig config) : _cgi_path(cgi_path), _cgi_executable(cgi_executable), _config(config)
+Cgi::Cgi(std::string cgi_path, std::string cgi_executable, HttpConfig config) : _cgi_executable(cgi_executable), _config(config)
 {
 	char	*cwd = getcwd(NULL, 0);
 	if (!cwd)
@@ -22,6 +22,7 @@ Cgi::Cgi(std::string cgi_path, std::string cgi_executable, HttpConfig config) : 
 		return ;
 	}
 	this->_cwd = std::string(cwd);
+	this->_cgi_path = this->_cwd + "/" + cgi_path;
 	free(cwd);
 }
 
@@ -133,7 +134,7 @@ int	Cgi::executeCgi(Request request, std::string& body)
 	//validate cgi params and cgi path
 	cgi_path = this->_cgi_path;
 	if (!ft_endswith(this->_cgi_path, "/")) cgi_path += "/";
-	cgi_path += this->_cgi_executable;
+		cgi_path += this->_cgi_executable;
 
 	if (!ft_file_exist(cgi_path))
 	{
@@ -167,7 +168,6 @@ int	Cgi::executeCgi(Request request, std::string& body)
 
 		//write body to infile
 		write(cgi_in_fd, request.get_body().c_str(), request.get_body().size());
-		//  write(cgi_in_fd, "asdf", 4);
 		lseek(cgi_in_fd, 0, SEEK_SET);
 
 		//configure signal handler for sigchild
@@ -191,6 +191,14 @@ int	Cgi::executeCgi(Request request, std::string& body)
 			_generate_envp(request);
 			char	**envp = this->_convert_envp_to_c();
 			
+			//chdir to cgi_path
+			if (chdir((this->_cgi_path).c_str()))
+			{
+				this->_logger.log(ERROR, "chdir crashed");
+				perror("");
+				exit (1);
+			}
+
 			//make outfile stdout of process
 			dup2(cgi_out_fd, STDOUT_FILENO);
 			dup2(cgi_out_fd, STDERR_FILENO);

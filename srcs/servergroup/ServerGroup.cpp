@@ -242,10 +242,8 @@ void	ServerGroup::run()
 			{
 				int	send_ret;
 
-				// std::cout << "FD_ISSET("<<*responses_iter<<", writefd)" << FD_ISSET(*responses_iter, &(write_fds)) << "\n";
 				if (FD_ISSET(*responses_iter, &(write_fds)))
 				{
-					// send_ret = 	send(*responses_iter, response , strlen(response) , 0);
 					send_ret = this->_clients[*responses_iter]->send(*responses_iter);
 					if (send_ret < 0)
 					{

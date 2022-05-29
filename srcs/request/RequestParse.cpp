@@ -39,12 +39,14 @@ std::string	Request::_read_key(std::string str)
  */
 std::string	Request::_read_value(std::string str)
 {
-	size_t	pos;
+	size_t		pos;
+	std::string	res;
 
 	pos = str.find(":");
 	if (pos == std::string::npos)
 		return "";
-	return str.substr(pos + 2, str.length());
+	res = str.substr(pos + 2);
+	return str.substr(pos + 2);
 }
 
 /**
@@ -87,7 +89,5 @@ void Request::_parse_raw(std::string raw)
 		this->_body = raw.substr(start_idx);
 	if (ft_endswith(this->_body, CRLF))
 		this->_body.erase(this->_body.size() - 4);
-	// this->print_headers();
-	// this->print_body();
 	return ;
 }

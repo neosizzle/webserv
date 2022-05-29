@@ -6,6 +6,13 @@ Cgi::~Cgi(){}
 
 Cgi::Cgi(const Cgi& other){*this = other;}
 
+/**
+ * @brief Construct a new Cgi:: Cgi object
+ * 
+ * @param cgi_path 
+ * @param cgi_executable 
+ * @param config 
+ */
 Cgi::Cgi(std::string cgi_path, std::string cgi_executable, HttpConfig config) : _cgi_path(cgi_path), _cgi_executable(cgi_executable), _config(config)
 {
 	char	*cwd = getcwd(NULL, 0);
@@ -28,6 +35,11 @@ Cgi& Cgi::operator=(const Cgi& other)
 	return *this;
 }
 
+/**
+ * @brief Generates env vars needed to execve cgi executable
+ * 
+ * @param request 
+ */
 void	Cgi::_generate_envp(Request request)
 {
 	std::string							route;
@@ -35,9 +47,8 @@ void	Cgi::_generate_envp(Request request)
 	std::string							header_val;
 
 	//locaiton subsitution
-	route = request.get_route();
-	if (ft_beginswith(route, this->_config.get_location_url()))
-		route = route.substr(this->_config.get_location_url().size());
+	route = ft_location_subsitute(route, this->_config.get_location_url());
+
 	this->_env["REDIRECT_STATUS"] = "200";
 	this->_env["CONTENT_LENGTH"] = request.get_body().size() > 0 ? ITOA(request.get_body().size()) : "0";
 	this->_env["CONTENT_TYPE"] = request.get_headers()["Content-Type"];
@@ -47,12 +58,12 @@ void	Cgi::_generate_envp(Request request)
 	this->_env["QUERY_STRING"] = ""; //we dont support query strings
 	this->_env["REMOTE_ADDR"] = ft_ltip(this->_config.get_host());
 	this->_env["REQUEST_URI"] = this->_cwd + "/" + this->_config.get_path() + route;
-	// this->_env["REQUEST_URI"] = request.get_route();
 	this->_env["REQUEST_METHOD"] = request.get_method();
 	this->_env["SCRIPT_NAME"] =  this->_cwd + "/" + this->_cgi_path +  "/" + this->_cgi_executable;
 	this->_env["SERVER_PROTOCOL"] = "HTTP/1.1";
 	this->_env["SERVER_SOFTWARE"] = "webserv";
 	this->_env["SERVER_PORT"] = ITOA(this->_config.get_port());
+
 	//append http headers from request
 	headers_req = request.get_headers();
 	for (std::map<std::string, std::string>::iterator i = headers_req.begin();
@@ -61,11 +72,6 @@ void	Cgi::_generate_envp(Request request)
 	{
 		if (!i->second.empty())
 		{
-			if (ft_to_upper(i->first) == "HOST")
-			{
-				this->_env["HTTP_HOST"] = "asdfg";
-				continue ; 
-			}
 			header_val = "HTTP_" + ft_to_upper(i->first);
 			std::replace(header_val.begin(), header_val.end(), '-', '_');
 			this->_env[header_val] = i->second;
@@ -122,6 +128,7 @@ int	Cgi::executeCgi(Request request, std::string& body)
 	FILE		*cgi_outfile;
 	int			og_stdin;
 	int			og_stdout;
+	std::string	og_route;
 
 	//validate cgi params and cgi path
 	cgi_path = this->_cgi_path;
@@ -153,11 +160,9 @@ int	Cgi::executeCgi(Request request, std::string& body)
 		}
 
 		//locaiton subsitution
-		route = request.get_route();
-		if (ft_beginswith(route, this->_config.get_location_url()))
-			route = route.substr(this->_config.get_location_url().size());
+		route = ft_location_subsitute(request.get_route(), this->_config.get_location_url());
 
-		arg_file = cwd + this->_config.get_path() + "/" + route;
+		arg_file = std::string(cwd) + "/" + this->_config.get_path() + "/" + route;
 		free(cwd);
 
 		//write body to infile
@@ -200,7 +205,10 @@ int	Cgi::executeCgi(Request request, std::string& body)
 		}
 		else
 		{
+			//select call will wait for timeout, will get interrupted by sigchild or timeout
 			rc = select(0, NULL,NULL,NULL, &timeout );
+
+			//no timeout (sigchild)
 			if (rc < 0)
 			{
 				//read from outfile pipe
@@ -212,17 +220,19 @@ int	Cgi::executeCgi(Request request, std::string& body)
 				}
 				wait(&child_status);
 				body = cgi_output;
-				// this->_logger.log(DEBUG, "CGI OUT " + body);
-				// this->_logger.log(DEBUG, "SIZE " + ITOA(body.size()));
 				if (!child_status) return 200;
 				return 500;
 			}
+
+			//timeout
 			else
 			{
 				this->_logger.log(ERROR, "cgi timeout");
 				return 408;
 			}
 		}
+
+		//close fds
 		dup2(og_stdin, STDIN_FILENO);
 		dup2(og_stdout, STDOUT_FILENO);
 		close(cgi_in_fd);

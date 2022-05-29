@@ -204,19 +204,11 @@ int	Server::recv(long socket)
 	for (int i = 0; i < bytes_read; ++i)
 		buffer += buf[i];
 
-	// //trim chunked body fields
-	// if (this->_requests[socket].find("Transfer-Encoding: chunked") != std::string::npos)
-	//  {
-	// 	//check if buffer is last chunk
-	// 	if (ft_endswith(buffer, "0\r\n\r\n"))
-	// 		this->_logger.log(DEBUG, "last chunk found " + buffer);
-	//  }
 	this->_requests[socket] += buffer;
 
 	//can find crlf in request (request complete)
 	if (this->_requests[socket].find(CRLF) != std::string::npos)
 	{
-		// std::cout << "crlf found!\n";
 		//if there is no content length
 		if (this->_requests[socket].find("Content-Length") == std::string::npos)
 		{
@@ -237,14 +229,9 @@ int	Server::recv(long socket)
 					.find("Content-Length: ") + 16, 10)
 					.c_str());
 		if (this->_requests[socket].size() >= content_len + this->_requests[socket].find(CRLF) + 4)
-		{
-			// std::cout << "returning zero, req complete\n";
 			return 0;
-		}
-		// std::cout << "crlf found but req not complete\n";
 		return 1;
 	}
-	// std::cout << "crlf not found\n";
 	return 1;
 }
 
@@ -295,9 +282,9 @@ void	Server::process(long socket)
 	//obtain location block config
 	location = this->_serv_cfg.match_location(request.get_route());
 	if (!location)
-		this->_logger.log(DEBUG, "no location");
+		this->_logger.log(INFO, "no location");
 	else
-		this->_logger.log(DEBUG, "location match " + location->get_location_url());
+		this->_logger.log(INFO, "location match " + location->get_location_url());
 
 	//generate request config
 	HttpConfig	reqCfg(location, request.get_route(), this->_port, this->_host);

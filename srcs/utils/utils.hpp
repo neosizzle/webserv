@@ -21,5 +21,6 @@ bool								isValidDirective(std::string str);
 //misc utils
 bool								ft_file_exist(std::string name);
 bool								ft_directory_exist(std::string name);
+std::string							ft_location_subsitute(std::string root, std::string location);
 
 #endif  //!__UTILS__H__

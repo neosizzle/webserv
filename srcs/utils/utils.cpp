@@ -73,8 +73,8 @@ std::string	ft_gnl(std::string &str, size_t &start)
 		return "";
 	j = str.find_first_of('\n', start);
 	ret = str.substr(start, j - start);
-	// if (ret[ret.size() - 1] == '\r')
-	// 	str.resize(str.size() - 1);
+	if (ret[ret.size() - 1] == '\r')
+		ret.resize(ret.size() - 1);
 	start = (j == std::string::npos ? j : j + 1);
 	return ret;
 }
@@ -312,5 +312,14 @@ std::string	ft_to_upper(std::string str)
 		if (res[i] >= 'a' && res[i] <= 'z')
 			res[i] -= 32;
 	}
+	return res;
+}
+
+std::string	ft_location_subsitute(std::string path, std::string location)
+{
+	std::string res;
+
+	if (ft_beginswith(path, location))
+		res = path.substr(location.size());
 	return res;
 }

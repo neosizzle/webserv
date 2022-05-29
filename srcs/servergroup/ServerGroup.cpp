@@ -102,17 +102,6 @@ void	ServerGroup::configure(Config cfg)
 	
 	//set this->listens
 	this->_listens = existing_listens;
-	// for (std::vector<Listen>::iterator listen_iter = existing_listens.begin();
-	// listen_iter != existing_listens.end();
-	// listen_iter++)
-	// {
-	// 	unsigned int host;
-
-	// 	host = 0;
-	// 	ft_iptuint(listen_iter->ip, host);
-	// 	this->_logger.log(DEBUG, listen_iter->ip + ":" + ITOA(listen_iter->port));
-	// 	this->_logger.log(DEBUG, "host long " + ITOA(host));
-	// }
 }
 
 /**
@@ -280,7 +269,6 @@ void	ServerGroup::run()
 			while (clients_iter != this->_clients.end() && avail_fds_found)
 			{
 				int	recv_ret;
-				// std::cout << "FD_ISSET("<<clients_iter->first<<", readfd) : " <<  FD_ISSET(clients_iter->first, &(read_fds_copy)) << "\n";
 
 				if (FD_ISSET(clients_iter->first, &(read_fds_copy)))
 				{
@@ -294,7 +282,6 @@ void	ServerGroup::run()
 						FD_CLR(clients_iter->first, &(this->_fd_set));
 						FD_CLR(clients_iter->first, &(read_fds_copy));
 						this->_clients.erase(clients_iter->first);
-						//clients_iter = this->_clients.begin(); //do i need to reset the iter?
 					}
 
 					//request is completed

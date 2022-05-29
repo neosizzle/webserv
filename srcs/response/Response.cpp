@@ -73,7 +73,6 @@ void	Response::_process_get(Request request)
 		return ;
 	}
 
-	// this->_logger.log(DEBUG, "file path " + file_path);
 	//read file and generate response
 	//ft_readfile returns 1 if file is not found
 	if (ft_readfile(file_path, file_contents))
@@ -163,6 +162,7 @@ void	Response::_process_post(Request request)
 	this->_generate_response(201, "");
 }
 
+//process put requests
 void	Response::_process_put(Request request)
 {
 	std::string							request_body;
@@ -244,6 +244,7 @@ void	Response::_process_put(Request request)
 	this->_generate_response(200, "");
 }
 
+//process delete requests
 void	Response::_process_delete(Request request)
 {
 	std::string	file_path;
@@ -323,9 +324,6 @@ void	Response::call(Request	request, HttpConfig requestConfig)
 			else
 				this->_generate_response(cgi_status, cgi_res);
 
-			// this->_logger.log(DEBUG, "SIZE " + ITOA(this->_body.size()));
-			this->_logger.log(DEBUG, "RAW SIZE " + ITOA(this->_raw.size()));
-			// this->_logger.log(DEBUG, "RAW RES " + this->_raw);
 			return ;
 		}
 	}

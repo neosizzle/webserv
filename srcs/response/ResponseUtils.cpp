@@ -19,8 +19,6 @@ int	Response::_do_upload(std::string file_path, std::string file_contents, int o
 	std::ofstream						new_file;
 	std::ifstream						existing_file;
 
-	// this->_logger.log(DEBUG, "|" + file_contents + "|");
-	this->_logger.log(DEBUG, "Content size " + ITOA(file_contents.size()));
 	try
 	{
 		existing_file.open(file_path.c_str());
@@ -160,8 +158,6 @@ int	Response::_parse_form_data(std::string body, std::string boundary , std::map
 	boundary = std::string("--") + boundary;
 	form_nodes = ft_split(body, boundary);
 	form_nodes[form_nodes.size() - 1] = form_nodes[form_nodes.size() - 1].substr(0, form_nodes[form_nodes.size() - 1].size() - (boundary.size() + 4));
-	// std::cout << "body " << body << "\n";
-	// std::cout << "boundary " << boundary << "\n";
 
 	std::vector<std::string>::iterator iter;
 
@@ -174,9 +170,7 @@ int	Response::_parse_form_data(std::string body, std::string boundary , std::map
 			content_disposition_idx = (*iter).find("Content-Disposition:");
 			content_disposition = (*iter).substr(content_disposition_idx, (*iter).find(CRLF, content_disposition_idx) - 1);
 			content_key = content_disposition.substr(content_disposition.find("name=") + 5, content_disposition.find(CRLF));
-			// std::cout << content_key << "\n";
 			content_value = (*iter).substr((*iter).find(CRLF) + 4, (*iter).size() - ((*iter).find(CRLF) + 4) - 2);
-			// std::cout << content_value << "\n";
 			form_data[content_key] = content_value;
 		}
 		catch(const std::exception& e)
@@ -311,17 +305,23 @@ void	Response::_generate_autoidx(std::string path, std::string root)
 	DIR	*FD;
 	struct dirent *in_file;
 	std::string final_path;
-	std::stringstream	ss;
+	std::stringstream	ss; 
 	std::string			file_name;
 	std::string			file_contents;
+	std::string			route;
+
+	route = path;
+	if (!ft_endswith(route, "/")) route += "/";
+
+	//location subsitution
+	path = ft_location_subsitute(path, this->_config.get_location_url());
 
 	final_path = root + path;
-	ss << "<h1> Index of " << path << "</h1>";
+	ss << "<h1> Index of " << final_path << "</h1>";
 	FD = opendir(final_path.c_str());
 	if (FD == NULL)
 	{
 		this->_generate_err_response(404, this->_config.get_path());
-		perror("Failed to open directory");
 		return ;
 	}
 	while ((in_file = readdir(FD))) 
@@ -329,18 +329,18 @@ void	Response::_generate_autoidx(std::string path, std::string root)
 		file_name = std::string(in_file->d_name);
 		if (path != std::string("/") && path.find(".") == std::string::npos && !ft_endswith(path , "/")) path += std::string ("/");
 		if (file_name == std::string("."))
-			ss << "<br/>" << "<a href = " << path << ">.</a>" ;
+			ss << "<br/>" << "<a href = " << route << ">.</a>" ;
 		else if (file_name == std::string(".."))
 		{
 			if (path == "/")
 				ss << "<br/> <a href = />..</a>";
 			else
-				ss << "<br/>" << "<a href = " << path.substr(0, path.find_last_of("/", path.length() - 2) + 1) << ">" << ".." << "</a>";
+				ss << "<br/>" << "<a href = " << route.substr(0, route.find_last_of("/", route.length() - 2) + 1) << ">" << ".." << "</a>";
 		}
 		else if (file_name.find(".") == std::string::npos)
-			ss << "<br/>" << "<a href = " << path  + file_name + "/" << ">" << file_name << "</a>";
+			ss << "<br/>" << "<a href = " << route + file_name + "/" << ">" << file_name << "</a>";
 		else
-			ss << "<br/>" << "<a href = " << path + file_name << ">" << file_name << "</a>";
+			ss << "<br/>" << "<a href = " << route + file_name << ">" << file_name << "</a>";
     }
 	closedir(FD);
 	this->_generate_response(200, ss.str());
@@ -355,7 +355,7 @@ void	Response::_generate_autoidx(std::string path, std::string root)
 void	Response::_generate_err_response(int code, std::string root_path)
 {
 	std::string	err_page_content;
-
+ 
 	if (this->_config.get_error_pages().count(code) == 0)
 	{
 		this->_generate_response(code, this->_resolve_status(code));

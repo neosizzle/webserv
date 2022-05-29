@@ -1,5 +1,6 @@
 #include "Response.hpp"
 
+//process put requests for 42 tester behaviour
 void	Response::_process_put_tester(Request request)
 {
 	std::string	upload_path;
@@ -43,6 +44,7 @@ void	Response::_process_put_tester(Request request)
 	this->_generate_response(500, this->_resolve_status(500) + " : Upload failed");
 }
 
+//process put requests for 42 tester behaviour
 void	Response::_process_post_tester(Request request)
 {
 	std::string	route;
@@ -52,7 +54,7 @@ void	Response::_process_post_tester(Request request)
 	content_length = std::atol(request.get_headers()["Content-Length"].c_str());
 	if (!content_length)
 		content_length = request.get_body().size();
-	this->_logger.log(DEBUG, "max size "+ ITOA(this->_config.get_max_size()));
+	
 	//location subsitution
 	if (ft_beginswith(route, this->_config.get_location_url()))
 		route = route.substr(this->_config.get_location_url().size());

@@ -3,19 +3,12 @@
 
 Config::Config()
 {
-	// this->_path = DEFAULT_CONF;
-
-	// //start parsing raw
-	// this->_logger.log(DEBUG, "AMBATA PARSE default");
-	// if (this->_parse() != 0)
-	// {
-	// 	this->_logger.log(ERROR, "Parse error, exiting...");
-	// 	exit(1);
-	// }
 }
 
-Config::Config(std::string cfg_filename = DEFAULT_CONF)
+Config::Config(std::string cfg_filename)
 {
+	if (cfg_filename.size() < 1)
+		cfg_filename = DEFAULT_CONF;
 	this->_path = cfg_filename;
 	
 	//start parsing raw

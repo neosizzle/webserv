@@ -3,21 +3,33 @@
 
 Config::Config()
 {
-	this->_path = DEFAULT_CONF;
+	// this->_path = DEFAULT_CONF;
 
-	//start parsing raw
-	this->_parse();
+	// //start parsing raw
+	// this->_logger.log(DEBUG, "AMBATA PARSE default");
+	// if (this->_parse() != 0)
+	// {
+	// 	this->_logger.log(ERROR, "Parse error, exiting...");
+	// 	exit(1);
+	// }
 }
 
-Config::Config(std::string cfg_filename = "/home/nszl/42cursus/webserv/config/sample.conf")
+Config::Config(std::string cfg_filename = DEFAULT_CONF)
 {
 	this->_path = cfg_filename;
 	
 	//start parsing raw
-	this->_parse();
+	if (this->_parse() != 0)
+	{
+		this->_logger.log(ERROR, "Parse error, exiting...");
+		exit(1);
+	}
 }
 
 Config::~Config(){}
+
+//getters
+std::vector<ServerConfig>	Config::get_servers(){return this->_servers;}
 
 /**
  * @brief Tokenizer
@@ -33,7 +45,7 @@ Config::~Config(){}
  * 		4. check for braces and semicolon
  * 		5. push validated token string to _tokens vector
  */
-void	Config::_tokenize()
+int	Config::_tokenize()
 {
 	std::ifstream		cfgfile(this->_path.c_str());
 	int					line_idx;
@@ -45,14 +57,17 @@ void	Config::_tokenize()
 	std::string			err_msg;
 
 	if (!cfgfile.is_open())
-		throw std::runtime_error("failed to open conf file");
+	{
+		this->_logger.log(ERROR, "Failed to open conf file");
+		return 1;
+	}
 	line_idx = 0;
 	while (std::getline(cfgfile, line))
 	{
 		this->_raw += (line + "\n");
 		last = 0;
 		first = line.find_first_not_of(" \t", last);
-		while (first != std::string::npos)
+		while (first != (int) std::string::npos)
 		{
 			if (line[first] == '#')
 				break ;
@@ -64,15 +79,15 @@ void	Config::_tokenize()
 			{
 				if (brackets.empty())
 				{
-					err_msg = "Extra '}' at line " + ITOA(line_idx);
-					throw std::runtime_error(err_msg);
+					this->_logger.log(ERROR, "Extra '}' at line " + ITOA(line_idx));
+					return 1;
 				}
 				brackets.pop();
 			}
 			if (isValidDirective(token_str) && line[line.find_last_not_of(" \t", line.length())] != ';')
 			{
-				err_msg =  "Missing ';' at line  " + ITOA(line_idx);
-				throw std::runtime_error(err_msg);
+				this->_logger.log(ERROR,  "Missing ';' at line  " + ITOA(line_idx));
+				return 1;
 			}
 			if (token_str.find(";", token_str.length() - 1) != std::string::npos)
 			{
@@ -87,17 +102,33 @@ void	Config::_tokenize()
 		++line_idx;
 	}
 	if (!brackets.empty())
-		throw std::runtime_error("Unclosed or extra '{' ");
+	{
+		this->_logger.log(ERROR, "Unclosed or extra '{' ");
+		return 1;
+	}
+	return 0;
 }
 
-//parsing
-void	Config::_parse()
+/**
+ * @brief Tokenizes config file and parses token to extract data
+ * 
+ * 1. Will call tokenize(), if it fails, return 1
+ * 2. Start iteration through the tokens obtained by tokenize()
+ * 	1. If current token is 'server' (server block), create server object and move
+ * 		Pointer to the next matchging brace
+ * 	2. Begin to parse server config, returns 1 on failure
+ *  3. Push configured server to _servers
+ * 
+ * @return int 0 if Ok, non zero if error 
+ */
+int	Config::_parse()
 {
 	std::vector<std::string>::iterator 	it;
 	int									servers_found;
 	std::vector<std::string>::iterator	it_begin;
 
-	this->_tokenize();
+	if (this->_tokenize())
+		return 1;
 	it = this->_tokens.begin();
 	servers_found = 0;
 	while (it != this->_tokens.end())
@@ -108,14 +139,16 @@ void	Config::_parse()
 
 			it_begin = it;
 			moveToBraces(++it, this->_tokens);
-			srv_cfg.server(it_begin, it);
+			if (srv_cfg.server(it_begin, it) != 0)
+				return 1;
 
 			//add servcfg to vect
+			this->_servers.push_back(srv_cfg);
 
 			servers_found++;
 		}
 		else
 			it++;
 	}
-	std::cout << "servers found " << servers_found << "\n";
+	return 0;
 }

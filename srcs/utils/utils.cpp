@@ -73,8 +73,8 @@ std::string	ft_gnl(std::string &str, size_t &start)
 		return "";
 	j = str.find_first_of('\n', start);
 	ret = str.substr(start, j - start);
-	// if (ret[ret.size() - 1] == '\r')
-	// 	str.resize(str.size() - 1);
+	if (ret[ret.size() - 1] == '\r')
+		ret.resize(ret.size() - 1);
 	start = (j == std::string::npos ? j : j + 1);
 	return ret;
 }
@@ -99,6 +99,30 @@ int	ft_endswith(std::string str, std::string needle)
 		j--;
 		if (i < 0 || str[i] != needle[j])
 			return 0;
+	}
+	return 1;
+}
+
+/**
+ * @brief Determines if string str begins with string needle
+ * 
+ * @param str 
+ * @param needle 
+ * @return int 0 if false and 1 is true
+ */
+int	ft_beginswith(std::string str, std::string needle)
+{
+	size_t	i;
+	size_t	j;
+
+	i = 0;
+	j = 0;
+	while (j < needle.size())
+	{
+		if (i > str.size() || str[i] != needle[j])
+			return 0;
+		i++;
+		j++;
 	}
 	return 1;
 }
@@ -129,6 +153,43 @@ int	ft_readfile(std::string path, std::string &res)
 	return 0;
 }
 
+/**
+ * @brief Converts hostname in ip form to unsigned int form
+ * 
+ * @param hostname 
+ * @param res 
+ * @return int 
+ */
+int	ft_iptuint(std::string hostname, unsigned int &res)
+{
+	std::vector<std::string>	bytes_str;
+	unsigned int				curr_byte;
+	int							shift;
+
+	shift = 24;
+	bytes_str = ft_split(hostname, ".");
+	if (bytes_str.size() != 4)
+		return -1;
+	for (int i = 0; i < 4; i++)
+	{
+		curr_byte = std::atoi(bytes_str[i].c_str());
+		if (curr_byte < 256)
+			res += (curr_byte << shift);
+		else
+			return 1;
+		shift -= 8;
+	}
+	return 0;
+}
+
+/**
+ * @brief Reimplementation of std::find to accept non const values
+ * 
+ * @param first 
+ * @param last 
+ * @param value 
+ * @return std::vector<int>::iterator 
+ */
 std::vector<int>::iterator ft_find( std::vector<int>::iterator first, std::vector<int>::iterator last, int & value )
 {
 	while (first != last)
@@ -161,6 +222,12 @@ void	trimWhiteSpace(std::string &line)
 	}
 }
 
+/**
+ * @brief Move to next matching }
+ * 
+ * @param iter 
+ * @param tokens 
+ */
 void	moveToBraces(std::vector<std::string>::iterator &iter, std::vector<std::string> tokens)
 {
 	std::stack<bool>					braces;
@@ -201,4 +268,58 @@ bool	isValidDirective(std::string str)
           str == "cgi" ||
           str == "cgi_bin" ||
 		  str == "client_max_body_size");
+}
+
+/**
+ * @brief check if file exists
+ * 
+ * @param name 
+ * @return true it does
+ * @return false it dosnt
+ */
+bool	ft_file_exist(std::string name)
+{
+	std::ifstream f(name.c_str());
+    return f.good();
+}
+
+/**
+ * @brief Check if directory exists
+ * 
+ * @param name 
+ * @return true 
+ * @return false 
+ */
+bool	ft_directory_exist(std::string name)
+{
+	struct stat info;
+
+	if( stat( name.c_str(), &info ) != 0 )
+		return false;
+	else if( info.st_mode & S_IFDIR )
+		return true;
+	else
+		return false;
+}
+
+std::string	ft_to_upper(std::string str)
+{
+	std::string	res;
+
+	res = str;
+	for (size_t i = 0; i < res.size(); i++)
+	{
+		if (res[i] >= 'a' && res[i] <= 'z')
+			res[i] -= 32;
+	}
+	return res;
+}
+
+std::string	ft_location_subsitute(std::string path, std::string location)
+{
+	std::string res;
+
+	if (ft_beginswith(path, location))
+		res = path.substr(location.size());
+	return res;
 }

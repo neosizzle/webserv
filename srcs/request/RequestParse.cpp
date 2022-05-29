@@ -39,12 +39,14 @@ std::string	Request::_read_key(std::string str)
  */
 std::string	Request::_read_value(std::string str)
 {
-	size_t	pos;
+	size_t		pos;
+	std::string	res;
 
 	pos = str.find(":");
 	if (pos == std::string::npos)
 		return "";
-	return str.substr(pos + 1, str.length());
+	res = str.substr(pos + 2);
+	return str.substr(pos + 2);
 }
 
 /**
@@ -69,7 +71,7 @@ void Request::_parse_raw(std::string raw)
 	this->_read_req_line(raw);
 
 	//logging
-	std::cout << BOLDGREEN << "Request : " << raw.substr(0, raw.find('\n')) << RESET << "\n";
+	this->_logger.log(INFO, "Request : " + raw.substr(0, raw.find('\n')));
 
 	//extract headers
 	start_idx = 0;
@@ -82,10 +84,10 @@ void Request::_parse_raw(std::string raw)
 		this->_headers.insert(std::make_pair(curr_key, curr_value));
 	}
 	
-	//extract body
+	//extract body (Removes trailing crlf)
 	if (start_idx != std::string::npos)
-		this->_body = raw.substr(start_idx, std::string::npos);
-	// this->print_headers();
-	// this->print_body();
+		this->_body = raw.substr(start_idx);
+	if (ft_endswith(this->_body, CRLF))
+		this->_body.erase(this->_body.size() - 4);
 	return ;
 }

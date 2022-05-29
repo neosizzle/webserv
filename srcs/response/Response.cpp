@@ -16,7 +16,7 @@ Response	&Response::operator=(const Response &other)
 	this->_req = other._req;
 	this->_body = other._body;
 	this->_headers = other._headers;
-	//this->_config = other._config;
+	this->_config = other._config;
 	return *this;
 }
 
@@ -43,49 +43,41 @@ void	Response::_generate_response(int code, std::string body)
 	int			body_length;
 	
 	body_length = body.length();
+	this->_body = body;
 	response_fst_line = "HTTP/1.1 " + ITOA(code) + this->_resolve_status(code);
 	response_str += (response_fst_line + "\n");
 	response_str += "Content-Length: " + ITOA(body_length) + "\n";
 	response_str += "Content-Type: text/html\n\n";
-	response_str += (body );
+	response_str += body;
 
 	this->_raw = response_str;
 }
 
 //processes get requests
-// char	*response = "HTTP/1.1 200 OK\n"
-// "Date: Mon, 27 Jul 2009 12:28:53 GMT\n"
-// "Server: Apache/2.2.14 (Win32)\n"
-// "Last-Modified: Wed, 22 Jul 2009 19:15:56 GMT\n"
-// "Content-Length: 19\n"
-// "Content-Type: text/html\n"
-// "\n<h1>it gets :o</h1>";
-
-// this->_raw = std::string(response);
 void	Response::_process_get(Request request)
 {
 	std::string	file_path;
 	std::string	file_contents;
 
-	//check route match and load config
-
 	//check autoindex
-	if (autoidx && request.get_route().find(".") == std::string::npos)
+	if (this->_config.get_autoindex() && request.get_route().find(".") == std::string::npos)
 	{
-		this->_generate_autoidx(request.get_route(), root_path);
+		this->_generate_autoidx(request.get_route(), this->_config.get_path());
 		return ;
 	}
 
 	//resolve filepath
-	file_path = Response::_resolve_filepath(request.get_route(), root_path);
-	// std::cout << file_path << "\n";
+	if(this->_resolve_filepath(request.get_route(), this->_config.get_path(), file_path))
+	{
+		this->_generate_err_response(404, this->_config.get_path());
+		return ;
+	}
 
 	//read file and generate response
+	//ft_readfile returns 1 if file is not found
 	if (ft_readfile(file_path, file_contents))
 	{
-		file_path = root_path + "/" + not_found_file;
-		ft_readfile(file_path, file_contents);
-		this->_generate_response(404, file_contents);
+		this->_generate_err_response(404, this->_config.get_path());
 		return ;
 	}
 
@@ -103,6 +95,7 @@ void	Response::_process_post(Request request)
 	std::string							err_msg;
 	std::map<std::string, std::string>	form_data;
 	std::string							file_content;
+	std::string							upload_path;
 	int									upload_status;
 
 	//check valid body and headers
@@ -120,7 +113,18 @@ void	Response::_process_post(Request request)
 		return ;
 	}
 	
+	//check the content length is under max size
+	if (this->_config.get_max_size() > 0 && std::atol(request.get_headers()["Content-Length"].c_str()) > this->_config.get_max_size())
+	{
+		this->_generate_response(413, "Maximum size exceeded");
+		return ;
+	}
+
 	//check for upload path
+	if (ft_endswith(this->_config.get_path(), "/"))
+		upload_path = this->_config.get_path() + this->_config.get_upload_path();
+	else
+		upload_path = this->_config.get_path() + "/" + this->_config.get_upload_path();
 
 	//valdiate uplaod path is a directory
 	if (upload_path.find_last_of("/") != upload_path.size() - 1) upload_path += "/";
@@ -145,7 +149,8 @@ void	Response::_process_post(Request request)
 	//extract file contents and upload to fs
 	if (this->_get_file_upload_body(form_data, file_content))
 		this->_generate_response(500, "Internal Server Error: Cant read body");
-	upload_status = this->_do_upload(upload_path + file_name, file_content);
+
+	upload_status = this->_do_upload(upload_path + file_name, file_content, 0);
 	if (upload_status > 0)
 	{
 		if (upload_status == 2)
@@ -154,47 +159,185 @@ void	Response::_process_post(Request request)
 			this->_generate_response(500, "Internal Server Error");
 		return ;
 	}
+	this->_generate_response(201, "");
+}
+
+//process put requests
+void	Response::_process_put(Request request)
+{
+	std::string							request_body;
+	std::string							file_path;
+	std::string							file_name;
+	std::map<std::string, std::string>	request_headers;
+	std::string							request_content_type;
+	std::string							err_msg;
+	std::map<std::string, std::string>	form_data;
+	std::string							file_content;
+	std::string							upload_path;
+	int									upload_status;
+
+	//check valid body and headers
+	request_headers = request.get_headers();
+	if (!request_headers.count("Content-Type"))
+	{
+		this->_generate_response(400, "Invalid request body, Missing Content-Type in header.");
+		return ;
+	}
+	request_content_type =  request_headers["Content-Type"];
+	if (request_content_type.find("multipart/form-data") == std::string::npos)
+	{
+		err_msg = std::string("Invalid request body, Expecting multipart/form-data in header, got ") + request_content_type;
+		this->_generate_response(400, err_msg);
+		return ;
+	}
+	
+	//check the content length is under max size
+	if (this->_config.get_max_size() > 0 && std::atol(request.get_headers()["Content-Length"].c_str()) > this->_config.get_max_size())
+	{
+		this->_generate_response(413, "Maximum size exceeded");
+		return ;
+	}
+
+	//check for upload path
+	if (ft_endswith(this->_config.get_path(), "/"))
+		upload_path = this->_config.get_path() + this->_config.get_upload_path();
+	else
+		upload_path = this->_config.get_path() + "/" + this->_config.get_upload_path();
+
+	//valdiate upload path is a directory
+	if (upload_path.find_last_of("/") != upload_path.size() - 1) upload_path += "/";
+
+	//extract binary data and file name
+	request_body = request.get_body();
+	if (this->_parse_form_data(request_body, request_content_type.substr(request_content_type.find("boundary=") + 9, request_content_type.size()), form_data))
+	{
+		err_msg = std::string("Form data is invalid, Bad format");
+		this->_generate_response(400, err_msg);
+		return ;
+	}
+
+	//form data validatation
+	if (form_data.size() > 2 || this->_get_file_upload_name(form_data, file_name))
+	{
+		err_msg = std::string("Form data is invalid, Expecting name (text) and file (file)");
+		this->_generate_response(400, err_msg);
+		return ;
+	}
+
+	//check file exists
+	if (!ft_file_exist(upload_path + file_name))
+	{
+		this->_generate_err_response(404, this->_config.get_path());
+		return ;
+	}
+
+	//extract file contents and upload to fs
+	if (this->_get_file_upload_body(form_data, file_content))
+		this->_generate_response(500, "Internal Server Error: Cant read body");
+
+	upload_status = this->_do_upload(upload_path + file_name, file_content, 1);
+	if (upload_status > 0)
+	{
+		this->_generate_response(500, "Internal Server Error");
+		return ;
+	}
 	this->_generate_response(200, "");
 }
 
-void	Response::_process_put(Request request)
-{
-
-}
-
+//process delete requests
 void	Response::_process_delete(Request request)
 {
+	std::string	file_path;
+	std::string	route;
+	std::string	root;
+	int			del_status;
 
+	route = request.get_route();
+	if (ft_endswith(route, "/"))
+	{
+		this->_generate_response(400, route + " is a directory");
+		return ;
+	}
+	root = this->_config.get_path();
+	if (ft_endswith(root, "/"))
+		root = root.erase(root.size() - 2);
+	del_status = this->_do_delete(root + route);
+	if (del_status)
+	{
+		if (del_status == -1)
+			this->_generate_err_response(404, this->_config.get_path());
+		else
+			this->_generate_err_response(500, this->_config.get_path());
+	}
+	else
+		this->_generate_response(204, "");
 }
 
 //generate response to populate raw response string
-void	Response::call(Request	request)
+void	Response::call(Request	request, HttpConfig requestConfig)
 {
-	char	*response = "HTTP/1.1 200 OK\n"
-	"Date: Mon, 27 Jul 2009 12:28:53 GMT\n"
-	"Server: Apache/2.2.14 (Win32)\n"
-	"Last-Modified: Wed, 22 Jul 2009 19:15:56 GMT\n"
-	"Content-Length: 19\n"
-	"Content-Type: text/html\n"
-	"\n<h1>it gets :o</h1>";
+	std::string							method;
+	std::string							cgi_res;
+	std::map<std::string, std::string>	cgi_params;
+	std::vector<std::string>			allowed_methods;
+	int									cgi_status;
 
-	char	*response_post = "HTTP/1.1 200 OK\n"
-	"Date: Mon, 27 Jul 2009 12:28:53 GMT\n"
-	"Server: Apache/2.2.14 (Win32)\n"
-	"Last-Modified: Wed, 22 Jul 2009 19:15:56 GMT\n"
-	"Content-Length: 19\n"
-	"Content-Type: text/html\n"
-	"\n<h1>it post :o</h1>";
-
-	//resolve files
-
+	this->_config = requestConfig;
+	method = request.get_method();
+	cgi_params = this->_config.get_cgi_param();
+	allowed_methods = this->_config.get_methods();
+	
 	//check for allowed methods from cfg
+	if (std::find(allowed_methods.begin(), 
+		allowed_methods.end(),
+		method) == allowed_methods.end())
+	{
+		_generate_err_response(405, this->_config.get_path());
+		return ;
+	}
+
+	//check for redirection
+	if (this->_config.get_redirect().size() > 0)
+	{
+		this->_generate_redirection(this->_config.get_redirect());
+		return ;
+	}
+
+	//check for cgi
+	for (std::map<std::string, std::string>::iterator i = cgi_params.begin();
+	i != cgi_params.end();
+	i++)
+	{
+		if (request.get_route().find(".") == std::string::npos) break ;
+		if (request.get_route().substr(request.get_route().find(".")) == i->first)
+		{
+			Cgi	cgi(this->_config.get_cgi_dir(), i->second, this->_config);
+
+			cgi_status = cgi.executeCgi(request, cgi_res);
+
+			//trim and parse cgi res if its a http response
+			if (cgi_res.find("Status: ") != std::string::npos)
+				cgi_res = cgi_res.substr(cgi_res.find_last_of("\r\n") + 1);
+
+			if (cgi_status > 299 && cgi_res.size() < 1)
+				this->_generate_err_response(cgi_status, this->_config.get_path());
+			else
+				this->_generate_response(cgi_status, cgi_res);
+
+			return ;
+		}
+	}
+	
 
 	//process requests
 	if (request.get_method() == "GET")
 		this->_process_get(request);
 	else if (request.get_method() == "POST")
-		this->_process_post(request);
+		this->_process_post_tester(request);
+	else if (request.get_method() == "PUT")
+		this->_process_put_tester(request);
+	else if (request.get_method() == "DELETE")
+		this->_process_delete(request);
 	else
-		this->_raw = std::string(response_post);
+		this->_generate_err_response(500, this->_config.get_path());
 }

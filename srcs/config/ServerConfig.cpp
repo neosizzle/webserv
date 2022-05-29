@@ -5,6 +5,7 @@
 ServerConfig::ServerConfig()
 {
 	// this->_init_default_values();
+	this->_autoindex = false;
 }
 
 ServerConfig::~ServerConfig(){}
@@ -28,11 +29,22 @@ ServerConfig & ServerConfig::operator=(const ServerConfig &other)
 	this->_index_files = other._index_files;
 	this->_upload_path = other._upload_path;
 	this->_locations = other._locations;
+	this->_location_url = other._location_url;
+	this->_location_modifier = other._location_modifier;
+	this->_redirect = other._redirect;
 	return *this;
 }
 
-//parse tokens to get info
-void	ServerConfig::_parse()
+/**
+ * @brief Parses server block configuration 
+ * 
+ * 1. Trims outer braces and server keyword
+ * 2. Start iterating through the server block tokens
+ * 	1.Check for valid directive and execute directive operations
+ * 
+ * @return int 
+ */
+int	ServerConfig::_parse()
 {
 	std::vector<std::string>::iterator	iter;
 
@@ -44,14 +56,25 @@ void	ServerConfig::_parse()
 	{
 		//check for valid directive
 		if (this->_directive_operations[*iter])
-			(this->*(ServerConfig::_directive_operations[*iter]))(++iter);
+		{
+			if ((this->*(ServerConfig::_directive_operations[*iter]))(++iter))
+				return 1;
+		}
 		else
+		{
 			this->_logger.log(WARNING, "Invalid directive " + *iter + " at 'server'");
+			return 1;
+		}
 	}
-	this->_log();
+	return 0;
 }
 
-//parse server names
+/**
+ * @brief Processes server name directive
+ * 
+ * @param iter 
+ * @return int 
+ */
 int		ServerConfig::_parse_server_names(std::vector<std::string>::iterator &iter)
 {
 	while (*iter != ";")
@@ -62,9 +85,35 @@ int		ServerConfig::_parse_server_names(std::vector<std::string>::iterator &iter)
 	return 0;
 }
 
-//process info / parse location block
+/**
+ * @brief Process location block directive
+ * 
+ * 1. Check for location modifier and set location modifier
+ * 2. Check for starting brace
+ * 3. Iterate through tokens until reach ending brace
+ * 	1. Check and execute directive process
+ * 	2. Push location object to location vector
+ * 
+ * @param iter 
+ * @param locations 
+ * @return int 
+ */
 int	ServerConfig::_process_locations(std::vector<std::string>::iterator &iter, std::vector<ServerConfig> &locations)
 {
+	if (*iter == "=" || *iter == "~" || *iter =="~*" || *iter == "^~")
+	{
+		if (*iter == "=")
+			this->_location_modifier = EXACT;
+		else if (*iter == "~")
+			this->_location_modifier = CASE_SENS;
+		else if (*iter == "~*")
+			this->_location_modifier = CASE_INSENS;
+		else 
+			this->_location_modifier = LONGEST;
+		iter++;
+	}
+	else
+		this->_location_modifier = NONE;
 	this->_location_url = *iter;
 	
 	if (*(++iter) != "{")
@@ -75,16 +124,27 @@ int	ServerConfig::_process_locations(std::vector<std::string>::iterator &iter, s
 	while (*(++iter) != "}")
 	{
 		if (this->_directive_operations[*iter])
-			(this->*(ServerConfig::_directive_operations[*iter]))(++iter);
+		{
+			if ((this->*(ServerConfig::_directive_operations[*iter]))(++iter))
+				return 1;
+		}
 		else
+		{
 			this->_logger.log(WARNING, "Invalid directive " + *iter + " at 'location'");
-		// this->_logger.log(DEBUG, *iter);
+			return 1;
+		}
 	}
+	this->_locations.clear();
 	locations.push_back(*this);
-	this->_logger.log(INFO, "Parse location finish");
+	return 0;
 }
 
-//parse location info
+/**
+ * @brief Parse location block directive
+ * 
+ * @param iter 
+ * @return int 
+ */
 int		ServerConfig::_parse_location(std::vector<std::string>::iterator &iter)
 {
 	ServerConfig	location;
@@ -94,7 +154,19 @@ int		ServerConfig::_parse_location(std::vector<std::string>::iterator &iter)
 	return 0;
 }
 
-//parse listen
+/**
+ * @brief Process listen directive
+ * 
+ * 1. Check for hostname:port combination
+ * 2. Extract port string based on colon location
+ * 3. return 1 if port contains invalid numbers
+ * 4. return 1 if port exceeds maximum allowed value
+ * 5. Extract hostname and check for multiple ports
+ * 6. Create listen object and check for duplicate listen values
+ * 
+ * @param iter 
+ * @return int 
+ */
 int		ServerConfig::_parse_listen(std::vector<std::string>::iterator &iter)
 {
 	int			port;
@@ -109,11 +181,17 @@ int		ServerConfig::_parse_listen(std::vector<std::string>::iterator &iter)
 		std::string port_str = listen_str.substr(listen_str.find(':') + 1);
 
 		if (port_str.find_first_not_of("0123456789") != std::string::npos)
-			throw std::runtime_error("invalid port :" + port_str);
+		{
+			this->_logger.log(ERROR, "Invlid port " + port_str);
+			return 1;
+		}
 
 		port = std::atoi(port_str.c_str());
 		if (port > 65535)
-			throw std::runtime_error("Port too big");
+		{
+			this->_logger.log(ERROR, "Port too big " + port_str);
+			return 1;
+		}
 	}
 	else if (listen_str.find_first_not_of("0123456789") != std::string::npos) {
 		ip = listen_str;
@@ -149,10 +227,17 @@ int		ServerConfig::_parse_listen(std::vector<std::string>::iterator &iter)
 	return 0;
 }
 
-//parse client max body
+/**
+ * @brief Process client max body directive
+ * 
+ * 1. Check for non digits
+ * 2. Check for multiple inputs
+ * 
+ * @param iter 
+ * @return int 
+ */
 int		ServerConfig::_parse_max_body(std::vector<std::string>::iterator &iter)
 {
-	long		max_size;
 	std::string	max_size_str;
 
 	max_size_str = *iter;
@@ -170,12 +255,20 @@ int		ServerConfig::_parse_max_body(std::vector<std::string>::iterator &iter)
 	return 0;
 }
 
-//parse error pages
+/**
+ * @brief Process error page directive
+ * 
+ * 1. Check for invalid non-numeric error codes
+ * 2. Check for multiple error pages
+ * 3. Extract code and error page and add to map
+ * 
+ * @param iter 
+ * @return int 
+ */
 int		ServerConfig::_parse_error_page(std::vector<std::string>::iterator &iter)
 {
 	std::vector<int>	codes;
 	
-	this->_error_pages.clear();
 	while (iter->find_first_not_of("0123456789") == std::string::npos)
    	{
 		codes.push_back(std::atoi(iter->c_str()));
@@ -205,7 +298,14 @@ int		ServerConfig::_parse_root_path(std::vector<std::string>::iterator &iter)
 	return 0;
 }
 
-//parse indexes
+/**
+ * @brief Process index files directive
+ * 
+ * 1. Push indexes as tokens until semicolon is met
+ * 
+ * @param iter 
+ * @return int 
+ */
 int		ServerConfig::_parse_index(std::vector<std::string>::iterator &iter)
 {
 	this->_index_files.clear();
@@ -217,21 +317,39 @@ int		ServerConfig::_parse_index(std::vector<std::string>::iterator &iter)
 	
 	return 0;
 }
-
-//parse allowed methods / limit except
+ /**
+  * @brief Process limit except directive
+  * 
+  * 1. Push limit_except option until semicolon is met
+  * 
+  * @param iter 
+  * @return int 
+  */
 int		ServerConfig::_parse_limit_except(std::vector<std::string>::iterator &iter)
 {
 	this->_methods.clear();
 	while (*iter != ";")
 	{
+		if (*iter != "GET" && *iter != "PUT" && *iter != "POST" && *iter != "DELETE")
+		{
+			this->_logger.log(ERROR, "Invalid Method " + *iter);
+			return 1;
+		}
 		this->_methods.push_back(*iter);
 		++iter;
 	}
-	
 	return 0;
 }
 
-//parse autoindex
+/**
+ * @brief Process autoindex directive
+ * 
+ * 1. Check for invalid autoidx values (on or off only)
+ * 2. Check for multiple autoindexes
+ * 
+ * @param iter 
+ * @return int 
+ */
 int		ServerConfig::_parse_autoindex(std::vector<std::string>::iterator &iter)
 {
 	std::string	autoidx_str;
@@ -249,10 +367,17 @@ int		ServerConfig::_parse_autoindex(std::vector<std::string>::iterator &iter)
 	}
 	if (autoidx_str == "on")
 		this->_autoindex = true;
+	else
+		this->_autoindex = false;
 	return 0;
 }
 
-//parse uploads
+/**
+ * @brief Process upload directive 
+ * 
+ * @param iter 
+ * @return int 
+ */
 int		ServerConfig::_parse_upload(std::vector<std::string>::iterator &iter)
 {
 	this->_upload_path = *iter;
@@ -261,10 +386,20 @@ int		ServerConfig::_parse_upload(std::vector<std::string>::iterator &iter)
 		this->_logger.log(ERROR, "Multiple upload path " + *iter);
 		return 1;
 	}
+	if (!ft_directory_exist(this->_root_path + "/" + this->_upload_path))
+	{
+		this->_logger.log(ERROR, "upload path not found " + this->_root_path + "/" + this->_upload_path);
+		return 1;
+	}
 	return 0;
 }
 
-//parse cgi binary
+/**
+ * @brief Process cgi bin directive and checks for duplicates
+ * 
+ * @param iter 
+ * @return int 
+ */
 int		ServerConfig::_parse_cgi_bin(std::vector<std::string>::iterator &iter)
 {
 	this->_cgi_bin_path = *iter;
@@ -276,7 +411,12 @@ int		ServerConfig::_parse_cgi_bin(std::vector<std::string>::iterator &iter)
 	return 0;
 }
 
-//parse cgi
+/**
+ * @brief Processes cgi path directive
+ * 
+ * @param iter 
+ * @return int 
+ */
 int		ServerConfig::_parse_cgi(std::vector<std::string>::iterator &iter)
 {
 	std::string	extension;
@@ -293,41 +433,116 @@ int		ServerConfig::_parse_cgi(std::vector<std::string>::iterator &iter)
 	return 0;
 }
 
+/**
+ * @brief processes redirection directive
+ * 
+ * @param iter 
+ * @return int 
+ */
+int		ServerConfig::_parse_redirect(std::vector<std::string>::iterator &iter)
+{
+	std::string	status_str;
+	std::string	new_path;
+
+	new_path = *iter++;
+	if (*iter != ";")
+	{
+		this->_logger.log(ERROR, "multiple redirect value " + *iter);
+		return 1;
+	}
+	this->_redirect = new_path;
+	return 0;
+}
+
 //logging
 void	ServerConfig::_log()
 {
 	std::cout << "=========log==========\n";
 	if (this->_listens.size() > 0)
-		std::cout << "Listen : " << this->_listens[0].ip << ":" << this->_listens[0].port << "\n";
+	{
+		for (size_t i = 0; i < this->_listens.size(); i++)
+			std::cout << "Listen : " << this->_listens[i].ip << ":" << this->_listens[i].port << "\n";
+	}
 	else
 		std::cout << "No listens \n";
 
 	if (this->_server_name.size() > 0)
-		std::cout << "Serve rname : " << this->_server_name[0] << "\n";
+	{
+		for (size_t i = 0; i < this->_server_name.size(); i++)
+			std::cout << "Serve rname : " << this->_server_name[i] << "\n";
+	}
 	else
 		std::cout << "No server name\n";
 
-	std::cout << "Erro page : " << this->_error_pages.begin()->first << "\n";
+	if (this->_error_pages.size() > 0)
+	{
+		for (std::map<int, std::string>::iterator i = this->_error_pages.begin(); i != this->_error_pages.end(); i++)
+			std::cout << "Erro page : " << i->first << " - " << i->second << "\n";
+	}
 	std::cout << "Max size: " << this->_max_size << "\n";
 
 	if (this->_methods.size() > 0)
-		std::cout << "methods[0] : " << this->_methods[0] << "\n";
+	{
+		for (size_t i = 0; i < this->_methods.size(); i++)
+			std::cout << "methods[0] : " << this->_methods[i] << "\n";
+	}
 	else
 		std::cout << "no methods\n";
 	std::cout << "root_path : " << this->_root_path << "\n";
 	std::cout << "cgi_bin_path : " << this->_cgi_bin_path << "\n";
 	std::cout << "autoindex : " << this->_autoindex << "\n";
 	if (this->_index_files.size() > 0)
-		std::cout << "index_files[0] : " << this->_index_files[0] << "\n";
+	{
+		for (size_t i = 0; i < this->_index_files.size(); i++)
+			std::cout << "index_files[0] : " << this->_index_files[0] << "\n";
+
+		
+	}
 	else
 		std::cout << "no index files\n";
 	std::cout << "upload_path : " << this->_upload_path << "\n";
+	for (size_t i = 0; i < this->_locations.size(); i++)
+	{
+		std::cout << "================location " << this->_locations[i]._location_url  << " ==============\n";
+		if (this->_locations[i]._error_pages.size() > 0)
+		{
+			// for (std::map<int, std::string>::iterator i = this->_locations[i]._error_pages.begin(); i != this->_locations[i]._error_pages.end(); i++)
+			// 	std::cout << "Erro page : " << i->first << " - " << i->second << "\n";
+		}
+		std::cout << "Max size: " << this->_locations[i]._max_size << "\n";
+
+		if (this->_locations[i]._methods.size() > 0)
+		{
+			for (size_t i = 0; i < this->_locations[i]._methods.size(); i++)
+				std::cout << "methods[0] : " << this->_locations[i]._methods[i] << "\n";
+		}
+		else
+			std::cout << "no methods\n";
+		std::cout << "root_path : " << this->_locations[i]._root_path << "\n";
+		std::cout << "cgi_bin_path : " << this->_locations[i]._cgi_bin_path << "\n";
+		std::cout << "autoindex : " << this->_locations[i]._autoindex << "\n";
+		if (this->_locations[i]._index_files.size() > 0)
+		{
+			for (size_t i = 0; i < this->_locations[i]._index_files.size(); i++)
+				std::cout << "index_files[0] : " << this->_locations[i]._index_files[0] << "\n";
+
+			
+		}
+		else
+			std::cout << "no index files\n";
+		std::cout << "upload_path : " << this->_locations[i]._upload_path << "\n";
+		std::cout << "==========================location===============\n";
+	}
+	
 	// std::cout << "_locations : " << this->__locations << "\n";
 	std::cout << "=========log==========\n";
 
 }
 
-//initialize directive operations
+/**
+ * @brief Initialize directive operations
+ * 
+ */
 void	ServerConfig::_init_dir_operations()
 {
 	this->_directive_operations["location"] = &ServerConfig::_parse_location;
@@ -342,9 +557,13 @@ void	ServerConfig::_init_dir_operations()
 	this->_directive_operations["cgi"] = &ServerConfig::_parse_cgi;
 	this->_directive_operations["upload"] = &ServerConfig::_parse_upload;
 	this->_directive_operations["autoindex"] = &ServerConfig::_parse_autoindex;
+	this->_directive_operations["redirect"] = &ServerConfig::_parse_redirect;
 }
 
-//initialize default values
+/**
+ * @brief Initialize default values
+ * 
+ */
 void	ServerConfig::_init_default_values()
 {
 	std::vector<std::string>			init_serv_names;
@@ -376,14 +595,109 @@ void	ServerConfig::_init_default_values()
 	//locations (root /var/www/html, index index.html, limit except GET)	
 }
 
-void	ServerConfig::server(std::vector<std::string>::iterator start, std::vector<std::string>::iterator end)
+int	ServerConfig::server(std::vector<std::string>::iterator start, std::vector<std::string>::iterator end)
 {
 	std::vector<std::string>	temp_vect(start, end);
 
 	this->_init_dir_operations();
 	this->_tokens = temp_vect;
-	this->_parse();
+	return this->_parse();
+}
+
+ServerConfig *ServerConfig::match_location(std::string path)
+{
+	std::vector<ServerConfig *> locations_to_filter;
+	ServerConfig	*temp;
+	ServerConfig	*regex_match;
+
+	temp = NULL;
+
+	for (std::vector<ServerConfig>::iterator i = this->_locations.begin();
+	i != this->_locations.end();
+	i++)
+	{
+		//if location mod is not case sens nor case insens
+		if (i->_location_modifier != 2 && i->_location_modifier != 3)
+		{
+			//exact match
+			if (i->_location_modifier == 1 && i->_location_url == path)
+				return &(*i);
+
+			//longest match
+			else if (path.find(i->_location_url) == 0)
+			{
+				if (temp && temp->_location_url.length() < i->_location_url.length())
+					temp = &(*i);
+				else if (!temp)
+					temp = &(*i);
+			}
+		}
+		else
+			locations_to_filter.push_back(&(*i));
+	}
+
+	//if location is not null and we are delaing with longest mtch
+	if (temp && temp->_location_modifier == 4)
+		return temp;
+
+	//start to match regex
+	regex_match = this->_match_regex(locations_to_filter, path);
+
+	if (regex_match)
+		return regex_match;
+	return temp;
+}
+
+ServerConfig	*ServerConfig::_match_regex(std::vector<ServerConfig *> locations, std::string path)
+{
+	regex_t	reg;
+	int		flag;
+	int		err;
+	int		match;
+	
+	for (std::vector<ServerConfig *>::iterator i = locations.begin(); i != locations.end(); i++)
+	{
+		flag = REG_NOSUB;
+
+		if ((*i)->_location_modifier == 3)
+			flag |= REG_ICASE;
+		err = regcomp(&reg, (*i)->_location_url.c_str(), flag);
+		if (err)
+		{
+			this->_logger.log(ERROR, "Regex comp failed ");
+			return NULL;
+		}
+		match = regexec(&reg, path.c_str(), 0, NULL, 0);
+		regfree(&reg);
+		if (!match)
+			return *i;
+		else
+			return NULL;
+	}
+	return NULL;
 }
 
 //getters
 std::vector<Listen> ServerConfig::get_listens(){return this->_listens;}
+
+std::string ServerConfig::get_location_url(){return this->_location_url;}
+
+std::string ServerConfig::get_root(){return this->_root_path;}
+
+std::map<int, std::string> ServerConfig::get_error_pages(){return this->_error_pages;}
+
+long ServerConfig::get_max_size(){return this->_max_size;}
+
+std::vector<std::string> ServerConfig::get_methods(){return this->_methods;}
+
+bool	ServerConfig::get_autoindex(){return this->_autoindex;}
+
+std::vector<std::string>	ServerConfig::get_indexes(){return this->_index_files;}
+
+std::string	ServerConfig::get_upload_path(){return this->_upload_path;}
+
+std::string ServerConfig::get_redirect(){return this->_redirect;}
+
+std::string ServerConfig::get_cgi_bin_path(){return this->_cgi_bin_path;}
+
+std::map<std::string, std::string> ServerConfig::get_cgi_info(){return this->_cgi_info;}

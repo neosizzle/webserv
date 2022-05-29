@@ -4,6 +4,8 @@
 #include "Request.hpp"
 #include "Response.hpp"
 #include "Logger.hpp"
+#include "ServerConfig.hpp"
+#include "HttpConfig.hpp"
 
 //class for a single server instance
 class Server
@@ -13,9 +15,10 @@ private:
 	struct sockaddr_in			_server_address;//server address metadata for bind()
 	int							_port;			//port the server listens on (from config)
 	unsigned int				_host;			//hostname (from config)
-	std::map<long, std::string>	_requests; //pending requests to handle (from multiple clients or same clients) (client fd, raw request)
-	std::map<long, std::string>	_responses; //pending requests to send(from multiple clients or same clients) (client fd, raw response)
-	Logger						_logger;//logging
+	std::map<long, std::string>	_requests;		//pending requests to handle (from multiple clients or same clients) (client fd, raw request)
+	std::map<long, std::string>	_responses; 	//pending requests to send(from multiple clients or same clients) (client fd, raw response)
+	Logger						_logger;		//logging
+	ServerConfig				_serv_cfg;		//server config
 
 	void						_unchunk_chunks(long socket); //merging chunked requests before processing them as 1 request	
 
@@ -31,6 +34,9 @@ public:
 	int								get_server_fd();
 	struct sockaddr_in				get_server_address();
 	std::map <long, std::string>	get_responses();
+	ServerConfig					get_serverconfig();
+
+	void							set_serverconfig(ServerConfig conf);
 
 	//configure
 	int						configure();

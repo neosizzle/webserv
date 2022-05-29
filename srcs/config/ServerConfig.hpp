@@ -5,6 +5,14 @@
 #include "LocationConfig.hpp"
 #include "Logger.hpp"
 
+enum LocationModifier {
+	NONE,
+	EXACT,
+	CASE_SENS,
+	CASE_INSENS,
+	LONGEST
+};
+
 struct Listen
 {
 	std::string	ip;
@@ -15,6 +23,8 @@ struct Listen
 };
 
 inline bool operator==(const Listen &lhs, const Listen &rhs){return lhs.ip == rhs.ip && lhs.port == rhs.port;}
+inline bool operator>(const Listen &lhs, const Listen &rhs){return lhs.port > rhs.port;}
+inline bool operator<(const Listen &lhs, const Listen &rhs){return lhs.port < rhs.port;}
 
 //server config class, will contain data for server block
 class ServerConfig
@@ -38,10 +48,12 @@ class ServerConfig
 		std::string							_upload_path;
 		std::vector<ServerConfig> 			_locations;
 		std::string							_location_url;
-
+		LocationModifier					_location_modifier;
+		std::string							_redirect;
+		
 		void	_init_default_values();//initializes default mandatory directives
 		void	_init_dir_operations();//initialize directive operations
-		void	_parse();//parse tokens into data
+		int		_parse();//parse tokens into data
 
 		int		_parse_location(std::vector<std::string>::iterator &iter);//parse location data
 		int		_parse_listen(std::vector<std::string>::iterator &iter);//parse listen port
@@ -55,9 +67,10 @@ class ServerConfig
 		int		_parse_upload(std::vector<std::string>::iterator &iter);//parse upload path
 		int		_parse_cgi_bin(std::vector<std::string>::iterator &iter);//parse cgi bin path
 		int		_parse_cgi(std::vector<std::string>::iterator &iter);//parse cgi info
-		int		_process_locations(std::vector<std::string>::iterator &iter, std::vector<ServerConfig> &locations);//parse location block
-		void	_log();
+		int		_parse_redirect(std::vector<std::string>::iterator &iter);
+		int		_process_locations(std::vector<std::string>::iterator &iter, std::vector<ServerConfig> &locations);//parse location block		
 
+		ServerConfig	*_match_regex(std::vector<ServerConfig *> locations, std::string path);
 		friend class LocationConfig;
 		
 	public:
@@ -72,8 +85,16 @@ class ServerConfig
 		std::map<int, std::string>			get_error_pages();
 		long								get_max_size();
 		std::map<std::string, std::string>	get_cgi_info();
+		std::string							get_cgi_bin_path();
 		std::vector<LocationConfig>			get_locations();
 		std::vector<Listen>					get_listens();
+		std::string							get_location_url();
+		std::string							get_root();
+		std::vector<std::string>			get_methods();
+		bool								get_autoindex();
+		std::vector<std::string>			get_indexes();
+		std::string							get_upload_path();
+		std::string							get_redirect();
 
 		//setters
 		void	set_server_name(std::vector<std::string> server_name);
@@ -82,7 +103,9 @@ class ServerConfig
 		void	set_cgi_info(std::map<std::string, std::string> cgi_info);
 		void	set_locations(std::vector<ServerConfig> locations);
 
-		void	server(std::vector<std::string>::iterator start, std::vector<std::string>::iterator end);
+		int				server(std::vector<std::string>::iterator start, std::vector<std::string>::iterator end);
+		ServerConfig	*match_location(std::string path);
+		void			_log();
 };
 
 #endif  //!__SERVERCONFIG__H__

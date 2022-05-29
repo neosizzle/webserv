@@ -23,7 +23,9 @@
 //constants
 #define BUFF_SIZE 1000000
 #define CRLF "\r\n\r\n"
-#define DEFAULT_CONF "/home/nszl/42cursus/webserv/config/sample.conf"
+#define DEFAULT_CONF "config/default.conf"
+#define PIPE_IN 1
+#define PIPE_OUT 0
 
 //logging
 #define DEBUG 0
@@ -41,6 +43,9 @@
 #include <sys/types.h>
 #include <dirent.h>
 #include <csignal>
+#include <regex.h>
+#include <sys/stat.h>
+#include <sys/wait.h>
 
 //containers
 #include <vector>

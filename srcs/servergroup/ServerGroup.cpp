@@ -2,11 +2,31 @@
 
 bool	ServerGroup::is_running = true;
 
+/**
+ * @brief Sigal handler to handle sigints sigstops on webserv 
+ * 
+ * 1. Set is_running status to stop
+ * 
+ * @param signum 
+ */
 void	sig_handler(int signum)
 {
+	(void) signum;
 	std::cout << "\n";
 	ServerGroup::is_running = false;
 }
+
+/**
+ * @brief Sigal handler to handle sigpipes
+ * 
+ * @param signum 
+ */
+void	sigpip_handler(int signum)
+{
+	(void) signum;
+	std::cout << "\n";
+}
+
 
 ServerGroup::ServerGroup()
 {
@@ -36,6 +56,55 @@ ServerGroup &ServerGroup::operator=(const ServerGroup &other)
 }
 
 /**
+ * @brief Configures server group, set member vars based on config
+ * 
+ * 1. Get config
+ * 2. Get server configs
+ * 3. Iterate through server configs
+ * 	1. Get listens of server config
+ * 	2. Append default ip or port if does not exist on current listen
+ * 	3. Ignore listen object if there is already an existing duplicate listen object created
+ * 	4. Add listen object into existing listen objects
+ * 
+ * @param cfg 
+ */
+void	ServerGroup::configure(Config cfg)
+{
+	std::vector<ServerConfig>		server_cfgs;
+	std::map<Listen, ServerConfig>	existing_listens;
+	std::vector<Listen>				lists;
+
+	//set this cfg
+	this->_cfg = cfg;
+
+	//get all server blocks
+	server_cfgs = cfg.get_servers();
+
+	//set up listens and do default server selection
+	//in the case of collision
+	for (std::vector<ServerConfig>::iterator servs_iter = server_cfgs.begin();
+	servs_iter != server_cfgs.end();
+	servs_iter++)
+	{
+		lists = servs_iter->get_listens();
+		if (lists.empty())
+			lists.push_back(Listen("0.0.0.0", 8080));
+		for (std::vector<Listen>::iterator listen_iter = lists.begin();
+		listen_iter != lists.end();
+		listen_iter++)
+		{
+			if (listen_iter->ip.size() == 0) listen_iter->ip = "0.0.0.0";
+			if (listen_iter->port == 0) listen_iter->port = 8080;
+			if (existing_listens.find(*listen_iter) == existing_listens.end())
+				existing_listens.insert(std::make_pair(*listen_iter, *servs_iter));
+		}
+	}
+	
+	//set this->listens
+	this->_listens = existing_listens;
+}
+
+/**
  * @brief Setup all servers for each port in ports parameter
  * 
  * 1. Resets / initializes fd_set
@@ -48,18 +117,26 @@ ServerGroup &ServerGroup::operator=(const ServerGroup &other)
  * 3. Check for error (no ports provided or no server is set up)
  * @param ports A vector of ports that you want the server to listen to
  */
-void	ServerGroup::setup(std::vector <int> ports)
+void	ServerGroup::setup()
 {
-	std::vector<int>::iterator iter;
-	long	serv_fd;
+	std::map<Listen, ServerConfig>::iterator	iter;
+	long							serv_fd;
+	unsigned int					host;
 
-	iter = ports.begin();
+	iter = this->_listens.begin();
 	FD_ZERO(&_fd_set);
-	while (iter != ports.end())
+	while (iter != this->_listens.end())
 	{
-		Server	serv(INADDR_ANY, *iter);
+		host = 0;
+		if (ft_iptuint(iter->first.ip, host))
+		{
+			this->_logger.log(ERROR, "Invalid hostname provided " + iter->first.ip);
+			return ;
+		}
+		Server	serv(host, iter->first.port);
 
 		serv_fd = serv.get_server_fd();
+		serv.set_serverconfig(iter->second);
 		if (serv_fd > this->_max_fd)
 			this->_max_fd = serv_fd;
 		FD_SET(serv_fd, &_fd_set);
@@ -75,6 +152,7 @@ void	ServerGroup::setup(std::vector <int> ports)
 	//atattch signal handler
 	signal(SIGINT, sig_handler);
 	signal(SIGTERM, sig_handler);
+	signal(SIGPIPE, sigpip_handler);
 }
 
 /**
@@ -167,26 +245,19 @@ void	ServerGroup::run()
 				// std::cout << "FD_ISSET("<<*responses_iter<<", writefd)" << FD_ISSET(*responses_iter, &(write_fds)) << "\n";
 				if (FD_ISSET(*responses_iter, &(write_fds)))
 				{
-					//response is getting sent here.... "HTTP/1.1 200 OK\n hello"
 					// send_ret = 	send(*responses_iter, response , strlen(response) , 0);
 					send_ret = this->_clients[*responses_iter]->send(*responses_iter);
 					if (send_ret < 0)
 					{
 						//error handling..
-						std::cout << "send error\n";
+						this->_logger.log(ERROR, "send error");
 						FD_CLR(*responses_iter, &(this->_fd_set));
 						FD_CLR(*responses_iter, &(read_fds_copy));
 						this->_clients.erase(*responses_iter);
 						this->_clients_write.erase(responses_iter);
 					}
-					// if (send_ret == 0)
-					// {
-					// 	this->_clients_write.erase(responses_iter);
-					// }
-					// this->_clients[*responses_iter]->close(*responses_iter);//close socket 
-					// this->_clients.erase(*responses_iter);//erase client 
-					this->_clients_write.erase(responses_iter);//erase write set
-					// FD_CLR(*responses_iter, &(this->_fd_set));//remove from fd set
+					else if (send_ret == 0)
+						this->_clients_write.erase(responses_iter);//erase write set
 					avail_fds_found = 0;
 					break;
 				}
@@ -198,7 +269,6 @@ void	ServerGroup::run()
 			while (clients_iter != this->_clients.end() && avail_fds_found)
 			{
 				int	recv_ret;
-				// std::cout << "FD_ISSET("<<clients_iter->first<<", readfd) : " <<  FD_ISSET(clients_iter->first, &(read_fds_copy)) << "\n";
 
 				if (FD_ISSET(clients_iter->first, &(read_fds_copy)))
 				{
@@ -212,7 +282,6 @@ void	ServerGroup::run()
 						FD_CLR(clients_iter->first, &(this->_fd_set));
 						FD_CLR(clients_iter->first, &(read_fds_copy));
 						this->_clients.erase(clients_iter->first);
-						//clients_iter = this->_clients.begin(); //do i need to reset the iter?
 					}
 
 					//request is completed

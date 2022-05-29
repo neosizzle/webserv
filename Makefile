@@ -10,8 +10,8 @@ INCS_UTILS = ./srcs/utils
 INCS_SERVERGROUP = ./srcs/servergroup
 INCS_LOGGER = ./srcs/logger
 NAME = webserv
-# CC = c++ -Wall -Wextra -Werror -std=c++98 -fsanitize=address -g3
-CC = c++ -Wall -Wextra -std=c++98 -fsanitize=address -g3 # for developing
+CC = c++ -Wall -Wextra -Werror -std=c++98 -fsanitize=address -g3
+# CC = c++ -Wall -Wextra -std=c++98 -fsanitize=address -g3 # for developing
 
 all : ${NAME}
 

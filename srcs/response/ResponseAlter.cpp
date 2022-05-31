@@ -20,6 +20,13 @@ void	Response::_process_put_tester(Request request)
 		return ;
 	}
 
+	//check the content length is under min size
+	if (this->_config.get_min_size() > 0 && std::atol(request.get_headers()["Content-Length"].c_str()) < this->_config.get_min_size())
+	{
+		this->_generate_response(400, "Minimum size not met");
+		return ;
+	}
+
 	//check for upload path
 	if (ft_endswith(this->_config.get_path(), "/"))
 		upload_path = this->_config.get_path() + this->_config.get_upload_path();
@@ -63,6 +70,13 @@ void	Response::_process_post_tester(Request request)
 	if (this->_config.get_max_size() > 0 &&  content_length > this->_config.get_max_size())
 	{
 		this->_generate_response(413, "Maximum size exceeded");
+		return ;
+	}
+
+	//check the content length is under min size
+	if (this->_config.get_min_size() > 0 && std::atol(request.get_headers()["Content-Length"].c_str()) < this->_config.get_min_size())
+	{
+		this->_generate_response(400, "Minimum size not met");
 		return ;
 	}
 

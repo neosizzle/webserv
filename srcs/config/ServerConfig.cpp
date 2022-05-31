@@ -21,6 +21,7 @@ ServerConfig & ServerConfig::operator=(const ServerConfig &other)
 	this->_server_name = other._server_name;
 	this->_error_pages = other._error_pages;
 	this->_max_size = other._max_size;
+	this->_min_size = other._min_size;
 	this->_cgi_info = other._cgi_info;
 	this->_methods = other._methods;
 	this->_root_path = other._root_path;
@@ -256,6 +257,34 @@ int		ServerConfig::_parse_max_body(std::vector<std::string>::iterator &iter)
 }
 
 /**
+ * @brief Process client min body directive
+ * 
+ * 1. Check for non digits
+ * 2. Check for multiple inputs
+ * 
+ * @param iter 
+ * @return int 
+ */
+int		ServerConfig::_parse_min_body(std::vector<std::string>::iterator &iter)
+{
+	std::string	min_size_str;
+
+	min_size_str = *iter;
+	if (min_size_str.find_first_not_of("1234567890") != std::string::npos)
+	{
+		this->_logger.log(ERROR, "Invalid size " + min_size_str);
+		return 1;
+	}
+	if (*++iter != ";")
+	{
+		this->_logger.log(ERROR, "Multiple sizes " + min_size_str);
+		return 1;
+	}
+	this->_min_size = std::atol(min_size_str.c_str());
+	return 0;
+}
+
+/**
  * @brief Process error page directive
  * 
  * 1. Check for invalid non-numeric error codes
@@ -308,7 +337,6 @@ int		ServerConfig::_parse_root_path(std::vector<std::string>::iterator &iter)
  */
 int		ServerConfig::_parse_index(std::vector<std::string>::iterator &iter)
 {
-	this->_index_files.clear();
 	while (*iter != ";")
 	{
 		this->_index_files.push_back(*iter);
@@ -539,7 +567,7 @@ void	ServerConfig::_log()
 
 }
 
-/**
+/*
  * @brief Initialize directive operations
  * 
  */
@@ -549,6 +577,7 @@ void	ServerConfig::_init_dir_operations()
 	this->_directive_operations["listen"] = &ServerConfig::_parse_listen;
 	this->_directive_operations["server_name"] = &ServerConfig::_parse_server_names;
 	this->_directive_operations["client_max_body_size"] = &ServerConfig::_parse_max_body;
+	this->_directive_operations["client_min_body_size"] = &ServerConfig::_parse_min_body;
 	this->_directive_operations["error_page"] = &ServerConfig::_parse_error_page;
 	this->_directive_operations["root"] = &ServerConfig::_parse_root_path;
 	this->_directive_operations["limit_except"] = &ServerConfig::_parse_limit_except;
@@ -589,6 +618,7 @@ void	ServerConfig::_init_default_values()
 	this->_server_name = init_serv_names;
 	this->_error_pages = init_err_pages;
 	this->_max_size = -1;
+	this->_min_size = -1;
 	this->_autoindex = false;
 	//cgi bin
 	//cgi info
@@ -687,6 +717,8 @@ std::string ServerConfig::get_root(){return this->_root_path;}
 std::map<int, std::string> ServerConfig::get_error_pages(){return this->_error_pages;}
 
 long ServerConfig::get_max_size(){return this->_max_size;}
+
+long ServerConfig::get_min_size(){return this->_min_size;}
 
 std::vector<std::string> ServerConfig::get_methods(){return this->_methods;}
 

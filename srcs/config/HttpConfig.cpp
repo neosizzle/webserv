@@ -12,6 +12,7 @@ HttpConfig::HttpConfig(ServerConfig *location, std::string route, int port, unsi
 	std::vector<std::string> methods;
 	std::vector<std::string> indexes;
 	long	max_size;
+	long	min_size;
 
 	if (!location)
 	{
@@ -51,6 +52,12 @@ HttpConfig::HttpConfig(ServerConfig *location, std::string route, int port, unsi
 	if (max_size < 1)
 		max_size = -1;
 	this->_max_size = max_size;
+
+	// min size
+	min_size = location->get_min_size();
+	if (min_size < 1)
+		min_size = -1;
+	this->_min_size = min_size;
 	// for (std::vector<std::string>::iterator i = indexes.begin(); i != indexes.end(); i++)
 	// 	this->_indexes.push_back(root + "/" + *i);
 	
@@ -65,6 +72,7 @@ HttpConfig &HttpConfig::operator=(const HttpConfig &other)
 	this->_path = other._path;
 	this->_error_pages = other._error_pages;
 	this->_max_size = other._max_size;
+	this->_min_size = other._min_size;
 	this->_cgi_param = other._cgi_param;
 	this->_cgi_dir = other._cgi_dir;
 	this->_methods = other._methods;
@@ -92,6 +100,8 @@ std::map<int, std::string>	HttpConfig::get_error_pages(){return this->_error_pag
 std::string					HttpConfig::get_upload_path(){return this->_upload_path;}
 
 long						HttpConfig::get_max_size(){return this->_max_size;}
+
+long						HttpConfig::get_min_size(){return this->_min_size;}
 
 std::string					HttpConfig::get_redirect(){return this->_redirect;}
 

@@ -100,6 +100,7 @@ void	ServerGroup::configure(Config cfg)
 		}
 	}
 	
+	this->_logger.log(DEBUG, ITOA(existing_listens.size()));
 	//set this->listens
 	this->_listens = existing_listens;
 }

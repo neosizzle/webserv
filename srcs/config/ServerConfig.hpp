@@ -39,6 +39,7 @@ class ServerConfig
 		std::vector<std::string>			_server_name;
 		std::map<int, std::string>			_error_pages;
 		long								_max_size;
+		long								_min_size;
 		std::map<std::string, std::string>	_cgi_info;
 		std::vector<std::string>			_methods;
 		std::string							_root_path;
@@ -59,6 +60,7 @@ class ServerConfig
 		int		_parse_listen(std::vector<std::string>::iterator &iter);//parse listen port
 		int		_parse_server_names(std::vector<std::string>::iterator &iter);//parse server name
 		int		_parse_max_body(std::vector<std::string>::iterator &iter);//parse client max size
+		int		_parse_min_body(std::vector<std::string>::iterator &iter);//parse client min size
 		int		_parse_error_page(std::vector<std::string>::iterator &iter);//parse error page
 		int		_parse_root_path(std::vector<std::string>::iterator &iter);//parse root path
 		int		_parse_index(std::vector<std::string>::iterator &iter);//parse index files
@@ -84,6 +86,7 @@ class ServerConfig
 		std::vector<std::string>			get_server_name();
 		std::map<int, std::string>			get_error_pages();
 		long								get_max_size();
+		long								get_min_size();
 		std::map<std::string, std::string>	get_cgi_info();
 		std::string							get_cgi_bin_path();
 		std::vector<LocationConfig>			get_locations();

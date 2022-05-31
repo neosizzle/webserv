@@ -71,8 +71,9 @@ ServerGroup &ServerGroup::operator=(const ServerGroup &other)
 void	ServerGroup::configure(Config cfg)
 {
 	std::vector<ServerConfig>		server_cfgs;
-	std::map<Listen, ServerConfig>	existing_listens;
+	std::map<Listen, std::vector<ServerConfig> >	existing_listens;
 	std::vector<Listen>				lists;
+	std::vector<ServerConfig>		existing_server_cfgs;
 
 	//set this cfg
 	this->_cfg = cfg;
@@ -96,11 +97,24 @@ void	ServerGroup::configure(Config cfg)
 			if (listen_iter->ip.size() == 0) listen_iter->ip = "0.0.0.0";
 			if (listen_iter->port == 0) listen_iter->port = 8080;
 			if (existing_listens.find(*listen_iter) == existing_listens.end())
-				existing_listens.insert(std::make_pair(*listen_iter, *servs_iter));
+			{
+				std::vector<ServerConfig>	new_cfgs;
+
+				new_cfgs.push_back(*servs_iter);
+				existing_listens.insert(std::make_pair(*listen_iter, new_cfgs));
+			}
+			else
+			{
+				existing_server_cfgs = existing_listens.find(*listen_iter)->second;
+				if (std::find(existing_server_cfgs.begin(), existing_server_cfgs.end(), *servs_iter) == existing_server_cfgs.end())
+				{
+					existing_server_cfgs.push_back(*servs_iter);
+					existing_listens[*listen_iter] = existing_server_cfgs;
+				}
+			}
 		}
 	}
 	
-	this->_logger.log(DEBUG, ITOA(existing_listens.size()));
 	//set this->listens
 	this->_listens = existing_listens;
 }
@@ -120,7 +134,7 @@ void	ServerGroup::configure(Config cfg)
  */
 void	ServerGroup::setup()
 {
-	std::map<Listen, ServerConfig>::iterator	iter;
+	std::map<Listen, std::vector<ServerConfig> >::iterator	iter;
 	long							serv_fd;
 	unsigned int					host;
 

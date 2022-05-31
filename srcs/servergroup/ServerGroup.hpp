@@ -16,7 +16,7 @@ class ServerGroup
 		long						_max_fd;		//maximum fd to be used by select first param
 		Config						_cfg;			//parsed config object
 		//std::vector<Listen>			_listens;		//listen objects to listen of port and host
-		std::map<Listen, ServerConfig>	_listens;
+		std::map<Listen, std::vector<ServerConfig> >	_listens;
 		Logger						_logger;
 
 	public:

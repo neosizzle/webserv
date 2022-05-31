@@ -36,6 +36,8 @@ ServerConfig & ServerConfig::operator=(const ServerConfig &other)
 	return *this;
 }
 
+bool		ServerConfig::operator==(const ServerConfig &other) {return this->_listens == other._listens && this->_server_name == other._server_name;}
+
 /**
  * @brief Parses server block configuration 
  * 
@@ -733,3 +735,5 @@ std::string ServerConfig::get_redirect(){return this->_redirect;}
 std::string ServerConfig::get_cgi_bin_path(){return this->_cgi_bin_path;}
 
 std::map<std::string, std::string> ServerConfig::get_cgi_info(){return this->_cgi_info;}
+
+std::vector<std::string>			ServerConfig::get_server_name(){return this->_server_name;}

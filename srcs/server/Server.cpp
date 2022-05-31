@@ -108,14 +108,14 @@ struct sockaddr_in Server::get_server_address()
  * 
  * @return ServerConfig 
  */
-ServerConfig Server::get_serverconfig(){return this->_serv_cfg;}
+std::vector<ServerConfig> Server::get_serverconfig(){return this->_serv_cfg;}
 
 /**
  * @brief Sets server config
  * 
  * @param conf 
  */
-void	Server::set_serverconfig(ServerConfig conf){this->_serv_cfg = conf;}
+void	Server::set_serverconfig(std::vector<ServerConfig> conf){this->_serv_cfg = conf;}
 
 /**
  * @brief Closes listening socket
@@ -264,9 +264,13 @@ void	Server::close(long socket)
  */
 void	Server::process(long socket)
 {
-	std::string		raw_req;
-	Response		response;
-	ServerConfig	*location;
+	std::string							raw_req;
+	Response							response;
+	ServerConfig						*location;
+	std::vector<std::string>			server_names;
+	std::vector<ServerConfig>::iterator serv_cfg_iter;
+	std::string							host;
+
 
 	raw_req = this->_requests[socket];
 
@@ -278,9 +282,24 @@ void	Server::process(long socket)
 
 	//no chunk, proceeed as normal
 	Request request(this->_requests[socket]);
+
+	//obtain server config based on request hostname
+	serv_cfg_iter = this->_serv_cfg.begin();
+	while (serv_cfg_iter != this->_serv_cfg.end())
+	{
+		host = request.get_headers()["Host"];
+		server_names = serv_cfg_iter->get_server_name();
+		if (std::find(server_names.begin(), server_names.end(), host.substr(0, host.find_first_of(":"))) != server_names.end())
+			break ;
+		serv_cfg_iter++;
+	}
 	
 	//obtain location block config
-	location = this->_serv_cfg.match_location(request.get_route());
+	if (serv_cfg_iter == this->_serv_cfg.end())
+		location = this->_serv_cfg.begin()->match_location(request.get_route());
+	else
+		location = serv_cfg_iter->match_location(request.get_route());
+
 	if (!location)
 		this->_logger.log(INFO, "no location");
 	else

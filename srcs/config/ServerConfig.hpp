@@ -81,6 +81,7 @@ class ServerConfig
 		~ServerConfig();
 		ServerConfig(const ServerConfig &other);
 		ServerConfig & operator=(const ServerConfig &other);
+		bool		operator==(const ServerConfig &other);
 
 		//getters
 		std::vector<std::string>			get_server_name();

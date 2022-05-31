@@ -18,7 +18,7 @@ private:
 	std::map<long, std::string>	_requests;		//pending requests to handle (from multiple clients or same clients) (client fd, raw request)
 	std::map<long, std::string>	_responses; 	//pending requests to send(from multiple clients or same clients) (client fd, raw response)
 	Logger						_logger;		//logging
-	ServerConfig				_serv_cfg;		//server config
+	std::vector<ServerConfig>	_serv_cfg;		//server config(s)
 
 	void						_unchunk_chunks(long socket); //merging chunked requests before processing them as 1 request	
 
@@ -31,12 +31,12 @@ public:
 	Server	&operator=(const Server &other);
 
 	//getters
-	int								get_server_fd();
-	struct sockaddr_in				get_server_address();
-	std::map <long, std::string>	get_responses();
-	ServerConfig					get_serverconfig();
+	int											get_server_fd();
+	struct sockaddr_in							get_server_address();
+	std::map <long, std::string>				get_responses();
+	std::vector<ServerConfig>					get_serverconfig();
 
-	void							set_serverconfig(ServerConfig conf);
+	void							set_serverconfig(std::vector<ServerConfig> conf);
 
 	//configure
 	int						configure();

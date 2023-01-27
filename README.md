@@ -46,15 +46,15 @@ activate select()
 Client ->> select() : request (http)
 select()->>Server code: Request carried  
 Server code ->> fs / CGI : Unchunk and parses request 
-fs / CGI --> Server code : Returns primitive value / data
-Server code --> select() : parses response
+fs / CGI -->> Server code : Returns primitive value / data
+Server code -->> select() : parses response
 deactivate select()
 loop  x seconds
 Client-->select(): waiting for write avail...
 end
 
 activate select()
-select() --> Client : response (http)
+select() -->> Client : response (http)
 deactivate select()
 ```
 

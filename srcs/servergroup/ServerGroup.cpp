@@ -233,6 +233,7 @@ void	ServerGroup::run()
 		}
 		if (avail_fds_found == -1)
 		{
+			// select error, we reset the fd set, close all clients 
 			if (this->is_running)
 			{
 				std::cerr << BOLDRED << "Select error " << RESET;
@@ -252,9 +253,11 @@ void	ServerGroup::run()
 		}
 		else
 		{
+			// ready to write responses to client
 			responses_iter = this->_clients_write.begin();
 			while (responses_iter != this->_clients_write.end() && avail_fds_found)
 			{
+				std::cout << "ready to write\n";
 				int	send_ret;
 
 				if (FD_ISSET(*responses_iter, &(write_fds)))
@@ -277,7 +280,7 @@ void	ServerGroup::run()
 				responses_iter++;
 			}
 			
-
+			// ready to read from client
 			clients_iter = this->_clients.begin();
 			while (clients_iter != this->_clients.end() && avail_fds_found)
 			{
@@ -285,6 +288,7 @@ void	ServerGroup::run()
 
 				if (FD_ISSET(clients_iter->first, &(read_fds_copy)))
 				{
+					std::cout << "ready to read.. \n";
 					//request handling goes here.....
 					recv_ret = clients_iter->second->recv(clients_iter->first);
 
@@ -309,9 +313,11 @@ void	ServerGroup::run()
 				clients_iter++;
 			}
 
+			// ready for new client connection
 			servers_iter = this->_servers.begin();
 			while (servers_iter != this->_servers.end() && avail_fds_found)
 			{
+				std::cout << "ready to connect..\n";
 				if (FD_ISSET(servers_iter->first, &(read_fds_copy)))
 				{
 					accepted_client_fd = servers_iter->second.accept();
